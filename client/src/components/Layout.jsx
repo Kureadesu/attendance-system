@@ -11,7 +11,7 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Mark Attendance', href: '/mark-attendance', icon: Calendar },
-    { name: 'Students', href: '/', icon: Users },
+    { name: 'Students', href: '/class-list', icon: Users },
   ];
 
   return (

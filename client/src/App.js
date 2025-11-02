@@ -43,6 +43,13 @@ function App() {
                 </Layout>
               </ProtectedRoute>
             } />
+            <Route path="/class-list" element={
+              <ProtectedRoute>
+                <Layout>
+                  <ClassList />
+                </Layout>
+              </ProtectedRoute>
+            } />
           </Routes>
         </div>
       </Router>

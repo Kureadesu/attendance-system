@@ -29,6 +29,9 @@ const AttendanceMarking = () => {
         subjectAPI.getAll()
       ]);
 
+      // Debug: Check what subjects data looks like
+      console.log('Subjects API response:', subjectsRes.data);
+
       // Sort students alphabetically by name
       const sortedStudents = studentsRes.data.sort((a, b) => 
         a.name.localeCompare(b.name)
@@ -95,7 +98,7 @@ const AttendanceMarking = () => {
   };
 
   const handleExportPDF = () => {
-    const selectedSubjectObj = subjects.find(sub => sub.id == selectedSubject);
+    const selectedSubjectObj = subjects.find(sub => sub.id === selectedSubject);
     exportToPDF(students, attendance, selectedDate, selectedSubjectObj);
   };
 
