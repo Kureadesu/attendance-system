@@ -1,5 +1,6 @@
+// models/attendance.js
 import { DataTypes } from 'sequelize';
-import sequelize from '../config/database.js';
+import { sequelize } from './index.js';
 
 const Attendance = sequelize.define('Attendance', {
   id: {
@@ -8,7 +9,7 @@ const Attendance = sequelize.define('Attendance', {
     autoIncrement: true
   },
   student_number: {
-    type: DataTypes.STRING(20),
+    type: DataTypes.STRING,
     allowNull: false
   },
   subject_id: {
@@ -22,15 +23,12 @@ const Attendance = sequelize.define('Attendance', {
   status: {
     type: DataTypes.ENUM('present', 'absent', 'late'),
     allowNull: false
-  },
-  remarks: {
-    type: DataTypes.TEXT
   }
 }, {
   tableName: 'attendance',
   timestamps: true,
-  createdAt: 'timestamp',
-  updatedAt: false
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
 });
 
 export default Attendance;

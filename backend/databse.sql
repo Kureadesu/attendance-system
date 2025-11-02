@@ -23,19 +23,21 @@ CREATE TABLE subjects (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Attendance Table
+-- Updated attendance table with better structure
 CREATE TABLE attendance (
     id INT PRIMARY KEY AUTO_INCREMENT,
     student_number VARCHAR(20) NOT NULL,
     subject_id INT NOT NULL,
     date DATE NOT NULL,
     status ENUM('present', 'absent', 'late') NOT NULL,
-    remarks TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_number) REFERENCES students(student_number),
-    FOREIGN KEY (subject_id) REFERENCES subjects(id),
-    INDEX idx_student_date (student_number, date),
-    INDEX idx_date_subject (date, subject_id)
+    -- Add composite unique constraint to prevent duplicate entries
+    UNIQUE KEY unique_attendance (student_number, subject_id, date),
+    FOREIGN KEY (student_number) REFERENCES students(student_number) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+    INDEX idx_student_subject_date (student_number, subject_id, date),
+    INDEX idx_date_subject (date, subject_id),
+    INDEX idx_student_date (student_number, date)
 );
 
 -- Admin Table

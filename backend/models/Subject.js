@@ -25,12 +25,4 @@ const Subject = sequelize.define('Subject', {
   updatedAt: false
 });
 
-const subjects = await sequelize.query('SELECT * FROM subjects', {
-  type: QueryTypes.SELECT,
-});
-
-const findSubjectByName = async (subjectName) => {
-  return await Subject.findOne({ where: { name: `${subjectName}` } });
-};
-
 export default Subject;

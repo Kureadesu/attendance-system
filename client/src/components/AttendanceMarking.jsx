@@ -17,6 +17,20 @@ const AttendanceMarking = () => {
   }, []);
 
   useEffect(() => {
+    const fetchExistingAttendance = async () => {
+      try {
+        const response = await attendanceAPI.getSubjectRecords(selectedSubject, { date: selectedDate });
+        const existingAttendance = {};
+        response.data.forEach(record => {
+          existingAttendance[record.student_number] = record.status;
+        });
+        setAttendance(existingAttendance);
+      } catch (error) {
+        console.error('Error fetching existing attendance:', error);
+        setAttendance({});
+      }
+    }; // This closing brace was missing
+
     if (selectedSubject && selectedDate) {
       fetchExistingAttendance();
     }
@@ -36,28 +50,19 @@ const AttendanceMarking = () => {
       const sortedStudents = studentsRes.data.sort((a, b) => 
         a.name.localeCompare(b.name)
       );
+
+      // Sort subjects alphabetically by name
+      const sortedSubjects = subjectsRes.data.sort((a, b) => 
+        a.name.localeCompare(b.name)
+      );
       
       setStudents(sortedStudents);
-      setSubjects(subjectsRes.data);
-      if (subjectsRes.data.length > 0) {
-        setSelectedSubject(subjectsRes.data[0].id);
+      setSubjects(sortedSubjects);
+      if (sortedSubjects.length > 0) {
+        setSelectedSubject(sortedSubjects[0].id);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-    }
-  };
-
-  const fetchExistingAttendance = async () => {
-    try {
-      const response = await attendanceAPI.getSubjectRecords(selectedSubject, { date: selectedDate });
-      const existingAttendance = {};
-      response.data.forEach(record => {
-        existingAttendance[record.student_number] = record.status;
-      });
-      setAttendance(existingAttendance);
-    } catch (error) {
-      console.error('Error fetching existing attendance:', error);
-      setAttendance({});
     }
   };
 
@@ -124,9 +129,9 @@ const AttendanceMarking = () => {
     const present = Object.values(attendance).filter(status => status === 'present').length;
     const absent = Object.values(attendance).filter(status => status === 'absent').length;
     const late = Object.values(attendance).filter(status => status === 'late').length;
-    const totalMarked = present + absent + late;
+    //const totalMarked = present + absent + late;
     
-    return { present, absent, late, totalMarked };
+    return { present, absent, late };
   };
 
   const stats = getAttendanceStats();
@@ -196,14 +201,6 @@ const AttendanceMarking = () => {
               Total Students
             </label>
             <p className="text-lg font-semibold text-gray-900">{students.length}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Marked Today
-            </label>
-            <p className="text-lg font-semibold text-gray-900">
-              {stats.totalMarked} / {students.length}
-            </p>
           </div>
         </div>
         

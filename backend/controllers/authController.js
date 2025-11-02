@@ -1,6 +1,6 @@
 // controllers/authController.js
 import jwt from 'jsonwebtoken';
-import { Admin } from '../models/index.js';
+//import { Admin } from '../models/index.js';
 
 export const login = async (req, res) => {
   try {

@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || '', // Use proxy or direct URL
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000', // Use proxy or direct URL
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -92,13 +92,13 @@ export const attendanceAPI = {
   mark: (attendanceData) => 
     apiClient.post('/api/attendance/mark', attendanceData),
   
+  // Get attendance records for a subject - FIXED THIS LINE
+  getSubjectRecords: (subjectId, params = {}) => 
+    apiClient.get(`/api/attendance/subject/${subjectId}`, { params }),
+  
   // Get attendance records for a student
   getStudentRecords: (studentNumber, params = {}) => 
-    apiClient.get(`/api/attendance/student/${studentNumber}`, { params }),
-  
-  // Get attendance records for a subject
-  getSubjectRecords: (subjectId, params = {}) => 
-    apiClient.get(`/api/attendance/subject/${subjectId}`, { params })
+    apiClient.get(`/api/attendance/student/${studentNumber}`, { params })
 };
 
 // Auth API calls
