@@ -85,19 +85,23 @@ export const subjectAPI = {
 // Attendance API calls
 export const attendanceAPI = {
   // Get attendance summary
-  getSummary: (range = 'month') => 
+  getSummary: (range = 'month') =>
     apiClient.get(`/api/attendance/summary?range=${range}`),
-  
+
+  // Get attendance trend data
+  getTrend: () =>
+    apiClient.get('/api/attendance/trend'),
+
   // Mark attendance
-  mark: (attendanceData) => 
+  mark: (attendanceData) =>
     apiClient.post('/api/attendance/mark', attendanceData),
-  
+
   // Get attendance records for a subject - FIXED THIS LINE
-  getSubjectRecords: (subjectId, params = {}) => 
+  getSubjectRecords: (subjectId, params = {}) =>
     apiClient.get(`/api/attendance/subject/${subjectId}`, { params }),
-  
+
   // Get attendance records for a student
-  getStudentRecords: (studentNumber, params = {}) => 
+  getStudentRecords: (studentNumber, params = {}) =>
     apiClient.get(`/api/attendance/student/${studentNumber}`, { params })
 };
 

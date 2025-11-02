@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { Users, TrendingUp, AlertTriangle, BookOpen, RefreshCw, Calendar, Award, Skull, Filter } from 'lucide-react';
+import { Users, TrendingUp, AlertTriangle, BookOpen, RefreshCw, Calendar, Award, Skull, Clock, Filter } from 'lucide-react';
 import { studentAPI, subjectAPI, attendanceAPI } from '../api/clientAPI';
 
 const COLORS = ['#10b981', '#ef4444', '#f59e0b'];
+
+// Helper function to merge student names into stats data
+const mergeStudentNames = (statsArray, studentsArray) => {
+  return statsArray.map(stat => {
+    const student = studentsArray.find(s => s.student_number === stat.student_number);
+    return {
+      ...stat,
+      student_name: student ? student.name : 'Unknown Student',
+      section: student ? student.section : 'Unknown Section'
+    };
+  });
+};
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -18,10 +30,25 @@ const Dashboard = () => {
   const [dateRange, setDateRange] = useState('today');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
+  const [studentView, setStudentView] = useState('attendance'); // 'attendance', 'absent', 'late'
+  const [attendanceTrendData, setAttendanceTrendData] = useState([]);
 
   useEffect(() => {
     fetchDashboardData();
   }, [dateRange, customStartDate, customEndDate]);
+
+  useEffect(() => {
+    fetchTrendData();
+  }, []);
+
+  const fetchTrendData = async () => {
+    try {
+      const trendRes = await attendanceAPI.getTrend();
+      setAttendanceTrendData(trendRes.data);
+    } catch (error) {
+      console.error('Error fetching trend data:', error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -29,7 +56,6 @@ const Dashboard = () => {
       setLoading(true);
 
       let range = dateRange;
-      // If custom range is selected and dates are provided
       if (dateRange === 'custom' && customStartDate && customEndDate) {
         range = `custom?start_date=${customStartDate}&end_date=${customEndDate}`;
       }
@@ -39,12 +65,19 @@ const Dashboard = () => {
         attendanceAPI.getSummary(range)
       ]);
 
-      console.log('Dashboard summary data:', summaryRes.data);
+      // Merge student names into studentStats
+      const mergedStudentStats = {
+        highest_attendance: mergeStudentNames(summaryRes.data.studentStats?.highest_attendance || [], studentsRes.data),
+        lowest_attendance: mergeStudentNames(summaryRes.data.studentStats?.lowest_attendance || [], studentsRes.data),
+        highest_absent: mergeStudentNames(summaryRes.data.studentStats?.highest_absent || [], studentsRes.data),
+        highest_late: mergeStudentNames(summaryRes.data.studentStats?.highest_late || [], studentsRes.data),
+        all_students: mergeStudentNames(summaryRes.data.studentStats?.all_students || [], studentsRes.data)
+      };
 
       setDashboardData({
         students: studentsRes.data,
         summary: summaryRes.data,
-        studentStats: summaryRes.data.studentStats || {},
+        studentStats: mergedStudentStats,
         subjectStats: summaryRes.data.subjectStats || {}
       });
 
@@ -98,16 +131,62 @@ const Dashboard = () => {
     { name: 'Late', value: stats.lateToday, count: stats.lateToday }
   ];
 
-  // Sample trend data (you can replace this with actual historical data from your API)
-  const attendanceTrendData = [
-    { date: '11-01', present: 45, absent: 5, late: 2, rate: 85 },
-    { date: '11-02', present: 48, absent: 3, late: 1, rate: 92 },
-    { date: '11-03', present: 42, absent: 6, late: 4, rate: 81 },
-    { date: '11-04', present: 47, absent: 4, late: 1, rate: 90 },
-    { date: '11-05', present: 46, absent: 3, late: 3, rate: 88 },
-    { date: '11-06', present: 44, absent: 5, late: 3, rate: 85 },
-    { date: '11-07', present: stats.presentToday, absent: stats.absentToday, late: stats.lateToday, rate: stats.attendanceRate }
-  ];
+  // Get student data based on current view
+  const getStudentData = () => {
+    switch (studentView) {
+      case 'attendance':
+        return {
+          title: 'Top Attendance',
+          icon: Award,
+          color: 'green',
+          data: studentStats.highest_attendance || [],
+          valueKey: 'attendance_rate',
+          valueSuffix: '%',
+          description: (student) => `${student.present}/${student.total_classes} classes`
+        };
+      case 'absent':
+        return {
+          title: 'Top Absentees',
+          icon: Skull,
+          color: 'red',
+          data: studentStats.highest_absent || [],
+          valueKey: 'absent_rate',
+          valueSuffix: '%',
+          description: (student) => `${student.absent} absences`
+        };
+      case 'late':
+        return {
+          title: 'Top Late Students',
+          icon: Clock,
+          color: 'yellow',
+          data: studentStats.highest_late || [],
+          valueKey: 'late_rate',
+          valueSuffix: '%',
+          description: (student) => `${student.late} late arrivals`
+        };
+      default:
+        return {
+          title: 'Top Attendance',
+          icon: Award,
+          color: 'green',
+          data: studentStats.highest_attendance || [],
+          valueKey: 'attendance_rate',
+          valueSuffix: '%',
+          description: (student) => `${student.present}/${student.total_classes} classes`
+        };
+    }
+  };
+
+  // Fix subjects needing attention - sort by absent rate (descending) - highest absentees first
+  const getSubjectsNeedingAttention = () => {
+    const allSubjects = subjectStats.all_subjects || [];
+    return allSubjects
+      .sort((a, b) => b.absent_rate - a.absent_rate)
+      .slice(0, 5);
+  };
+
+  const studentViewData = getStudentData();
+  const subjectsNeedingAttention = getSubjectsNeedingAttention();
 
   // Custom tooltip for pie chart
   const CustomPieTooltip = ({ active, payload }) => {
@@ -298,46 +377,66 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Student Performance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Performers */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">
-            Top Performers - {getRangeLabel()}
+      {/* Consolidated Student Performance */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Attendance Metrics - {getRangeLabel()}
           </h3>
-          <div className="space-y-3">
-            {studentStats.highest_attendance?.slice(0, 5).map((student, index) => (
-              <div key={student.student_number} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-green-100 text-green-600 rounded-full font-semibold">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{student.student_name}</p>
-                    <p className="text-sm text-gray-500">{student.section}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-green-600 text-lg">{student.attendance_rate}%</p>
-                  <p className="text-xs text-gray-500">
-                    {student.present}/{student.total_classes} classes
-                  </p>
-                </div>
-              </div>
-            )) || <p className="text-gray-500 text-center py-4">No student data available for this period</p>}
+          <div className="flex gap-2 mt-2 lg:mt-0">
+            <button
+              onClick={() => setStudentView('attendance')}
+              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                studentView === 'attendance'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <Award className="w-4 h-4" />
+              Top Attendance
+            </button>
+            <button
+              onClick={() => setStudentView('absent')}
+              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                studentView === 'absent'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <Skull className="w-4 h-4" />
+              Top Absentees
+            </button>
+            <button
+              onClick={() => setStudentView('late')}
+              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                studentView === 'late'
+                  ? 'bg-yellow-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+              Top Late
+            </button>
           </div>
         </div>
 
-        {/* Most Absences */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">
-            Most Absences - {getRangeLabel()}
-          </h3>
-          <div className="space-y-3">
-            {studentStats.highest_absent?.slice(0, 5).map((student, index) => (
-              <div key={student.student_number} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {studentViewData.data.slice(0, 6).map((student, index) => (
+            <div 
+              key={student.student_number} 
+              className={`p-4 rounded-lg border-l-4 ${
+                studentView === 'attendance' ? 'border-green-500 bg-green-50' :
+                studentView === 'absent' ? 'border-red-500 bg-red-50' :
+                'border-yellow-500 bg-yellow-50'
+              }`}
+            >
+              <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-red-100 text-red-600 rounded-full font-semibold">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
+                    studentView === 'attendance' ? 'bg-green-100 text-green-600' :
+                    studentView === 'absent' ? 'bg-red-100 text-red-600' :
+                    'bg-yellow-100 text-yellow-600'
+                  }`}>
                     {index + 1}
                   </div>
                   <div>
@@ -345,16 +444,36 @@ const Dashboard = () => {
                     <p className="text-sm text-gray-500">{student.section}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-red-600 text-lg">{student.absent_rate}%</p>
-                  <p className="text-xs text-gray-500">
-                    {student.absent}/{student.total_classes} absences
-                  </p>
-                </div>
+                <span className={`text-lg font-bold ${
+                  studentView === 'attendance' ? 'text-green-600' :
+                  studentView === 'absent' ? 'text-red-600' :
+                  'text-yellow-600'
+                }`}>
+                  {student[studentViewData.valueKey]}{studentViewData.valueSuffix}
+                </span>
               </div>
-            )) || <p className="text-gray-500 text-center py-4">No absence data available for this period</p>}
-          </div>
+              <p className="text-sm text-gray-600 mt-2">
+                {studentViewData.description(student)}
+              </p>
+              {studentView === 'attendance' && (
+                <div className="mt-2">
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-500 h-2 rounded-full" 
+                      style={{ width: `${student.attendance_rate}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
+
+        {studentViewData.data.length === 0 && (
+          <p className="text-gray-500 text-center py-8">
+            No {studentView} data available for this period
+          </p>
+        )}
       </div>
 
       {/* Subject Performance */}
@@ -382,20 +501,20 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Subjects Needing Attention */}
+        {/* Subjects Needing Attention - FIXED: Now shows highest absent rate */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">
             Subjects Needing Attention - {getRangeLabel()}
           </h3>
           <div className="space-y-3">
-            {subjectStats.lowest_attendance?.slice(0, 5).map((subject, index) => (
+            {subjectsNeedingAttention.map((subject, index) => (
               <div key={subject.subject_id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">{subject.subject_name}</p>
                   <p className="text-sm text-gray-500">{subject.schedule}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-red-600 text-lg">{subject.attendance_rate}%</p>
+                  <p className="font-semibold text-red-600 text-lg">{subject.absent_rate}%</p>
                   <p className="text-xs text-gray-500">
                     {subject.absent} absent / {subject.total_records} total
                   </p>

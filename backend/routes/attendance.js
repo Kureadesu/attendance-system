@@ -69,8 +69,37 @@ router.get('/summary', async (req, res) => {
   }
 });
 
-// Helper function for student statistics - FIXED: Specify table names
+// Helper function to calculate expected classes for a date range
+function calculateExpectedClasses(startDate, endDate) {
+  let expectedClasses = 0;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Monday to Friday
+      if (dayOfWeek === 5) { // Friday
+        expectedClasses += 2;
+      } else { // Monday to Thursday
+        expectedClasses += 3;
+      }
+    }
+  }
+  return expectedClasses;
+}
+
+// Helper function for student statistics - FIXED: Remove raw: true
 async function getStudentAttendanceStats(whereClause) {
+  // Extract start and end dates from whereClause
+  let startDate, endDate;
+  if (whereClause.date) {
+    if (typeof whereClause.date === 'string') {
+      startDate = endDate = whereClause.date;
+    } else if (whereClause.date[Op.between]) {
+      [startDate, endDate] = whereClause.date[Op.between];
+    }
+  }
+
   const studentStats = await Attendance.findAll({
     where: whereClause,
     attributes: [
@@ -84,29 +113,32 @@ async function getStudentAttendanceStats(whereClause) {
       model: Student,
       attributes: ['name', 'section']
     }],
-    group: ['Attendance.student_number'], // Specify table
-    having: Sequelize.literal('total_classes > 0'),
-    raw: true
+    group: ['Attendance.student_number']
+    // REMOVE: raw: true and having clause
   });
-  
+
+  // Calculate expected classes for the date range
+  const expectedClasses = calculateExpectedClasses(startDate, endDate);
+
   // Calculate rates and find top/bottom performers
   const studentsWithRates = studentStats.map(stat => {
-    const total = parseInt(stat.total_classes);
-    const present = parseInt(stat.present) || 0;
-    const absent = parseInt(stat.absent) || 0;
-    const late = parseInt(stat.late) || 0;
-    
+    const statData = stat.get({ plain: true }); // Convert Sequelize instance to plain object
+
+    const present = parseInt(statData.present) || 0;
+    const absent = parseInt(statData.absent) || 0;
+    const late = parseInt(statData.late) || 0;
+
     return {
-      student_number: stat.student_number,
-      student_name: stat['Student.name'],
-      section: stat['Student.section'],
-      total_classes: total,
+      student_number: statData.student_number,
+      student_name: statData.Student?.name, // Access nested Student object
+      section: statData.Student?.section,
+      total_classes: expectedClasses,
       present,
       absent,
       late,
-      attendance_rate: total > 0 ? Math.round((present / total) * 100) : 0,
-      absent_rate: total > 0 ? Math.round((absent / total) * 100) : 0,
-      late_rate: total > 0 ? Math.round((late / total) * 100) : 0
+      attendance_rate: expectedClasses > 0 ? Math.round((present / expectedClasses) * 100) : 0,
+      absent_rate: expectedClasses > 0 ? Math.round((absent / expectedClasses) * 100) : 0,
+      late_rate: expectedClasses > 0 ? Math.round((late / expectedClasses) * 100) : 0
     };
   });
   
@@ -230,6 +262,57 @@ router.get('/subject/:subjectId', async (req, res) => {
   } catch (error) {
     console.error('Error fetching subject attendance:', error);
     res.status(500).json({ error: 'Failed to fetch attendance records' });
+  }
+});
+
+// GET /api/attendance/trend - Get attendance trend data for the last 7 days
+router.get('/trend', async (req, res) => {
+  try {
+    const { range = 'week' } = req.query;
+
+    // Calculate date range
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 7);
+
+    // Get daily attendance counts for the last 7 days
+    const trendData = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+
+      const dayStats = await Attendance.findAll({
+        where: {
+          date: dateStr
+        },
+        attributes: [
+          'status',
+          [Sequelize.fn('COUNT', Sequelize.col('Attendance.id')), 'count']
+        ],
+        group: ['status'],
+        raw: true
+      });
+
+      const present = dayStats.find(s => s.status === 'present')?.count || 0;
+      const absent = dayStats.find(s => s.status === 'absent')?.count || 0;
+      const late = dayStats.find(s => s.status === 'late')?.count || 0;
+      const total = present + absent + late;
+      const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+
+      trendData.push({
+        date: date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' }),
+        present: parseInt(present),
+        absent: parseInt(absent),
+        late: parseInt(late),
+        rate
+      });
+    }
+
+    res.json(trendData);
+  } catch (error) {
+    console.error('Error fetching attendance trend:', error);
+    res.status(500).json({ error: 'Failed to fetch attendance trend' });
   }
 });
 
