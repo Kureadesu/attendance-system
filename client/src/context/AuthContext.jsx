@@ -1,6 +1,7 @@
 // frontend/src/context/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 const AuthContext = createContext();
 
@@ -27,7 +28,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const response = await axios.post('/api/auth/login', {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
         username,
         password
       });

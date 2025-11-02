@@ -1,18 +1,17 @@
-// backend/utils/createAdmin.js
+// utils/createAdmin.js
 import bcrypt from 'bcryptjs';
+import sequelize from '../config/database.js';
 import { Admin } from '../models/index.js';
-import { sequelize } from '../models/index.js';
-import dotenv from 'dotenv';
-dotenv.config();
 
 const createAdmin = async () => {
   try {
-    // Test database connection
+    console.log('🔄 Testing database connection...');
     await sequelize.authenticate();
     console.log('✅ Database connection established');
 
-    // Sync database
-    await sequelize.sync();
+    // Sync database - this will create missing tables/columns
+    console.log('🔧 Syncing database...');
+    await sequelize.sync({ alter: true });
     console.log('✅ Database synced');
 
     // Admin data
@@ -29,7 +28,17 @@ const createAdmin = async () => {
     if (existingAdmin) {
       console.log('⚠️  Admin user already exists:');
       console.log(`   Username: ${existingAdmin.username}`);
-      console.log('   You can use the default credentials: admin / admin123');
+      
+      // Test if password works
+      const isValid = await existingAdmin.validatePassword('admin123');
+      console.log(`   Default password works: ${isValid ? 'YES' : 'NO'}`);
+      
+      if (!isValid) {
+        console.log('🔄 Updating admin password...');
+        existingAdmin.password_hash = await bcrypt.hash('admin123', 12);
+        await existingAdmin.save();
+        console.log('✅ Admin password updated');
+      }
       return;
     }
 
@@ -39,12 +48,18 @@ const createAdmin = async () => {
     console.log('✅ Admin user created successfully!');
     console.log(`   Username: ${admin.username}`);
     console.log('   Password: admin123');
+    console.log(`   Created: ${admin.created_at}`);
     console.log('\n⚠️  IMPORTANT: Change the default password after first login!');
 
   } catch (error) {
     console.error('❌ Error creating admin:', error.message);
     if (error.original) {
       console.error('   Database error:', error.original.message);
+      
+      if (error.original.code === 'ER_BAD_FIELD_ERROR') {
+        console.log('\n💡 Database schema is outdated.');
+        console.log('   Run: node utils/resetDatabase.js');
+      }
     }
   } finally {
     await sequelize.close();
@@ -52,5 +67,4 @@ const createAdmin = async () => {
   }
 };
 
-// Run the script
 createAdmin();

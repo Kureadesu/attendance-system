@@ -13,6 +13,8 @@ import authRoutes from './routes/auth.js';
 import studentRoutes from './routes/students.js';
 import attendanceRoutes from './routes/attendance.js';
 import subjectRoutes from './routes/subjects.js';
+import dashboardRoutes from './routes/dashboard.js';
+import ClassList from './routes/classList.js';
 
 dotenv.config();
 
@@ -39,6 +41,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/subjects', subjectRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/classlist', ClassList);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -1,17 +1,24 @@
 // routes/attendance.js
 import express from 'express';
-import { 
-  markAttendance, 
-  getAttendanceSummary, 
-  getClassAttendance 
-} from '../controllers/attendanceController.js';
-import { authenticateToken } from '../middleware/auth.js';
-import { validateAttendance } from '../middleware/validation.js';
 
 const router = express.Router();
 
-router.post('/mark', authenticateToken, validateAttendance, markAttendance);
-router.get('/summary', authenticateToken, getAttendanceSummary);
-router.get('/', authenticateToken, getClassAttendance);
+// GET /api/attendance/summary - Temporary mock data
+router.get('/summary', async (req, res) => {
+  try {
+    // For now, return mock data until you implement attendance tracking
+    const summary = {
+      absentToday: 0,
+      lateToday: 0,
+      presentToday: 0,
+      totalRecords: 0
+    };
+    
+    res.json(summary);
+  } catch (error) {
+    console.error('Error fetching attendance summary:', error);
+    res.status(500).json({ error: 'Failed to fetch attendance summary' });
+  }
+});
 
 export default router;

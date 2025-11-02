@@ -1,7 +1,7 @@
-// frontend/src/components/AttendanceMarking.jsx
 import React, { useState, useEffect } from 'react';
-import { Save, CheckCircle, XCircle, Clock } from 'lucide-react';
-import axios from 'axios';
+import { Save, CheckCircle, XCircle, Clock, Download } from 'lucide-react';
+import { attendanceAPI, studentAPI, subjectAPI } from '../api/clientAPI';
+import { exportToPDF } from '../utils/exportUtils';
 
 const AttendanceMarking = () => {
   const [students, setStudents] = useState([]);
@@ -25,11 +25,16 @@ const AttendanceMarking = () => {
   const fetchData = async () => {
     try {
       const [studentsRes, subjectsRes] = await Promise.all([
-        axios.get('/api/students'),
-        axios.get('/api/subjects')
+        studentAPI.getAll(),
+        subjectAPI.getAll()
       ]);
 
-      setStudents(studentsRes.data);
+      // Sort students alphabetically by name
+      const sortedStudents = studentsRes.data.sort((a, b) => 
+        a.name.localeCompare(b.name)
+      );
+      
+      setStudents(sortedStudents);
       setSubjects(subjectsRes.data);
       if (subjectsRes.data.length > 0) {
         setSelectedSubject(subjectsRes.data[0].id);
@@ -41,7 +46,7 @@ const AttendanceMarking = () => {
 
   const fetchExistingAttendance = async () => {
     try {
-      const response = await axios.get(`/api/attendance?date=${selectedDate}&subjectId=${selectedSubject}`);
+      const response = await attendanceAPI.getSubjectRecords(selectedSubject, { date: selectedDate });
       const existingAttendance = {};
       response.data.forEach(record => {
         existingAttendance[record.student_number] = record.status;
@@ -69,14 +74,14 @@ const AttendanceMarking = () => {
     setSaving(true);
     try {
       const attendanceRecords = Object.entries(attendance).map(([studentNumber, status]) => ({
-        studentNumber,
+        student_number: studentNumber,
         status
       }));
 
-      await axios.post('/api/attendance/mark', {
+      await attendanceAPI.mark({
         date: selectedDate,
-        subjectId: selectedSubject,
-        attendanceRecords
+        subject_id: selectedSubject,
+        records: attendanceRecords
       });
 
       setSaved(true);
@@ -87,6 +92,11 @@ const AttendanceMarking = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleExportPDF = () => {
+    const selectedSubjectObj = subjects.find(sub => sub.id == selectedSubject);
+    exportToPDF(students, attendance, selectedDate, selectedSubjectObj);
   };
 
   const getStatusColor = (status) => {
@@ -107,6 +117,17 @@ const AttendanceMarking = () => {
     }
   };
 
+  const getAttendanceStats = () => {
+    const present = Object.values(attendance).filter(status => status === 'present').length;
+    const absent = Object.values(attendance).filter(status => status === 'absent').length;
+    const late = Object.values(attendance).filter(status => status === 'late').length;
+    const totalMarked = present + absent + late;
+    
+    return { present, absent, late, totalMarked };
+  };
+
+  const stats = getAttendanceStats();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -119,6 +140,13 @@ const AttendanceMarking = () => {
             </span>
           )}
           <button
+            onClick={handleExportPDF}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export PDF
+          </button>
+          <button
             onClick={handleSave}
             disabled={saving}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
@@ -129,9 +157,9 @@ const AttendanceMarking = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters and Stats */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Date
@@ -166,6 +194,30 @@ const AttendanceMarking = () => {
             </label>
             <p className="text-lg font-semibold text-gray-900">{students.length}</p>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Marked Today
+            </label>
+            <p className="text-lg font-semibold text-gray-900">
+              {stats.totalMarked} / {students.length}
+            </p>
+          </div>
+        </div>
+        
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">{stats.present}</div>
+            <div className="text-sm text-gray-600">Present</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-600">{stats.absent}</div>
+            <div className="text-sm text-gray-600">Absent</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-yellow-600">{stats.late}</div>
+            <div className="text-sm text-gray-600">Late</div>
+          </div>
         </div>
       </div>
 
@@ -174,6 +226,9 @@ const AttendanceMarking = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                No.
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Student Number
               </th>
@@ -192,8 +247,11 @@ const AttendanceMarking = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {students.map((student) => (
-              <tr key={student.student_number}>
+            {students.map((student, index) => (
+              <tr key={student.student_number} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {index + 1}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
                   {student.student_number}
                 </td>
@@ -206,16 +264,16 @@ const AttendanceMarking = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(attendance[student.student_number])}`}>
                     {getStatusIcon(attendance[student.student_number])}
-                    <span className="ml-1">
+                    <span className="ml-1 capitalize">
                       {attendance[student.student_number] || 'Not Marked'}
                     </span>
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-1">
                     <button
                       onClick={() => handleStatusChange(student.student_number, 'present')}
-                      className={`px-3 py-1 rounded text-xs ${
+                      className={`px-2 py-1 rounded text-xs ${
                         attendance[student.student_number] === 'present'
                           ? 'bg-green-600 text-white'
                           : 'bg-green-100 text-green-800 hover:bg-green-200'
@@ -225,7 +283,7 @@ const AttendanceMarking = () => {
                     </button>
                     <button
                       onClick={() => handleStatusChange(student.student_number, 'absent')}
-                      className={`px-3 py-1 rounded text-xs ${
+                      className={`px-2 py-1 rounded text-xs ${
                         attendance[student.student_number] === 'absent'
                           ? 'bg-red-600 text-white'
                           : 'bg-red-100 text-red-800 hover:bg-red-200'
@@ -235,7 +293,7 @@ const AttendanceMarking = () => {
                     </button>
                     <button
                       onClick={() => handleStatusChange(student.student_number, 'late')}
-                      className={`px-3 py-1 rounded text-xs ${
+                      className={`px-2 py-1 rounded text-xs ${
                         attendance[student.student_number] === 'late'
                           ? 'bg-yellow-600 text-white'
                           : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'

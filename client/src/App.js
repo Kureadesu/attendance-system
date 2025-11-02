@@ -8,6 +8,7 @@ import AttendanceMarking from './components/AttendanceMarking';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import './index.css';
+import ClassList from './components/ClassList';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();

@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Download, Calendar, User, Book } from 'lucide-react';
 import axios from 'axios';
 import { exportStudentPDF } from '../utils/pdfExport';
+import { studentAPI } from '../api/clientAPI';
 
 const COLORS = ['#10b981', '#ef4444', '#f59e0b'];
 
@@ -20,7 +21,7 @@ const StudentProfile = () => {
 
   const fetchStudentData = async () => {
     try {
-      const response = await axios.get(`/api/students/${studentNumber}/attendance?range=${timeRange}`);
+      const response = await studentAPI.getAttendance(studentNumber, timeRange);
       setStudentData(response.data);
     } catch (error) {
       console.error('Error fetching student data:', error);
