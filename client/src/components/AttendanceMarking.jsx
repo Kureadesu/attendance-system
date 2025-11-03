@@ -19,13 +19,6 @@ const AttendanceMarking = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (selectedSubject && selectedDate) {
-      validateSchedule();
-      fetchExistingAttendance();
-    }
-  }, [selectedSubject, selectedDate, validateSchedule, fetchExistingAttendance]);
-
   const validateSchedule = useCallback(() => {
     const subject = subjects.find(s => s.id === parseInt(selectedSubject));
     if (!subject) return;
@@ -68,6 +61,13 @@ const AttendanceMarking = () => {
       setAttendance({});
     }
   }, [selectedDate, selectedSubject]);
+
+  useEffect(() => {
+    if (selectedSubject && selectedDate) {
+      validateSchedule();
+      fetchExistingAttendance();
+    }
+  }, [selectedSubject, selectedDate, validateSchedule, fetchExistingAttendance]);
 
   const fetchData = async () => {
     try {
