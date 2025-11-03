@@ -1,137 +1,71 @@
-
-// frontend/src/utils/clientAPI.js
+// api/clientAPI.js
 import axios from 'axios';
 
-// Create axios instance with base configuration
-const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000', // Use proxy or direct URL
-  timeout: 10000,
+const API_BASE_URL = 'http://localhost:5000/api';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-  }
+  },
 });
 
-// Request interceptor to add auth token
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// Add auth token to requests if available
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  return config;
+});
 
-// Response interceptor for error handling
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Auto logout if token is invalid
-      localStorage.removeItem('adminToken');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
-// Student API calls
+// Student API
 export const studentAPI = {
-  // Get all students
-  getAll: () => apiClient.get('/api/students'),
-  
-  // Get student by student number
-  getByNumber: (studentNumber) => 
-    apiClient.get(`/api/students/${studentNumber}`),
-  
-  // Create new student
-  create: (studentData) => 
-    apiClient.post('/api/students', studentData),
-  
-  // Update student
-  update: (studentNumber, studentData) => 
-    apiClient.put(`/api/students/${studentNumber}`, studentData),
-  
-  // Delete student (soft delete)
-  delete: (studentNumber) => 
-    apiClient.delete(`/api/students/${studentNumber}`)
+  getAll: () => api.get('/students'),
+  getById: (id) => api.get(`/students/${id}`),
+  getByStudentNumber: (studentNumber) => api.get(`/students/${studentNumber}`),
+  create: (data) => api.post('/students', data),
+  update: (id, data) => api.put(`/students/${id}`, data),
+  delete: (id) => api.delete(`/students/${id}`),
 };
 
-// Subject API calls
+// Subject API
 export const subjectAPI = {
-  // Get all subjects
-  getAll: () => apiClient.get('/api/subjects'),
-  
-  // Get subject by ID
-  getById: (subjectId) => 
-    apiClient.get(`/api/subjects/${subjectId}`),
-  
-  // Create new subject
-  create: (subjectData) => 
-    apiClient.post('/api/subjects', subjectData),
-  
-  // Update subject
-  update: (subjectId, subjectData) => 
-    apiClient.put(`/api/subjects/${subjectId}`, subjectData),
-  
-  // Delete subject
-  delete: (subjectId) => 
-    apiClient.delete(`/api/subjects/${subjectId}`)
+  getAll: () => api.get('/subjects'),
+  getById: (id) => api.get(`/subjects/${id}`),
 };
 
-// Attendance API calls
+// Schedule API
+export const scheduleAPI = {
+  getCurrent: () => api.get('/schedules/current'),
+  getWeekly: () => api.get('/schedules/weekly'),
+  getByDay: (day) => api.get(`/schedules/day/${day}`),
+};
+
+// Attendance API
 export const attendanceAPI = {
-  // Get attendance summary
-  getSummary: (range = 'month') =>
-    apiClient.get(`/api/attendance/summary?range=${range}`),
-
-  // Get attendance trend data
-  getTrend: () =>
-    apiClient.get('/api/attendance/trend'),
-
-  // Mark attendance
-  mark: (attendanceData) =>
-    apiClient.post('/api/attendance/mark', attendanceData),
-
-  // Get attendance records for a subject - FIXED THIS LINE
-  getSubjectRecords: (subjectId, params = {}) =>
-    apiClient.get(`/api/attendance/subject/${subjectId}`, { params }),
-
-  // Get attendance records for a student
-  getStudentRecords: (studentNumber, params = {}) =>
-    apiClient.get(`/api/attendance/student/${studentNumber}`, { params })
+  mark: (data) => api.post('/attendance/mark', data),
+  getSummary: (range = 'today') => api.get(`/attendance/summary?range=${range}`),
+  getClass: (params) => api.get('/attendance/class', { params }),
+  getTrend: () => api.get('/attendance/trend'),
 };
 
-// Auth API calls
+// Auth API
 export const authAPI = {
-  // Login
-  login: (credentials) => 
-    apiClient.post('/api/auth/login', credentials),
-  
-  // Logout
-  logout: () => apiClient.post('/api/auth/logout'),
-  
-  // Check auth status
-  checkAuth: () => apiClient.get('/api/auth/me'),
-  
-  // Change password
-  changePassword: (passwordData) => 
-    apiClient.put('/api/auth/change-password', passwordData)
+  login: (credentials) => api.post('/auth/login', credentials),
+  getProfile: () => api.get('/auth/profile'),
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return Promise.resolve();
+  },
 };
 
-// Dashboard API calls
-export const dashboardAPI = {
-  // Get all dashboard data in one call
-  getOverview: () => 
-    apiClient.get('/api/dashboard/overview'),
-  
-  // Get quick stats
-  getStats: () => 
-    apiClient.get('/api/dashboard/stats')
+// Class List API
+export const classListAPI = {
+  getAll: (params) => api.get('/classList', { params }),
+  getStudent: (studentNumber, params) => api.get(`/classList/student/${studentNumber}`, { params }),
+  getSections: () => api.get('/classList/sections'),
 };
 
-// Export the base client for custom requests
-export default apiClient;
+export default api;

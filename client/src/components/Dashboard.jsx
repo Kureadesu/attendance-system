@@ -177,6 +177,18 @@ const Dashboard = () => {
     }
   };
 
+  // Helper function to format schedules
+  const formatSchedules = (schedules) => {
+    if (!schedules || schedules.length === 0) return 'No schedule';
+    return schedules
+      .sort((a, b) => {
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        return days.indexOf(a.day_of_week) - days.indexOf(b.day_of_week);
+      })
+      .map(schedule => `${schedule.day_of_week.slice(0, 3)} ${schedule.start_time.slice(0, 5)}-${schedule.end_time.slice(0, 5)}`)
+      .join(', ');
+  };
+
   // Fix subjects needing attention - sort by absent rate (descending) - highest absentees first
   const getSubjectsNeedingAttention = () => {
     const allSubjects = subjectStats.all_subjects || [];
@@ -488,7 +500,7 @@ const Dashboard = () => {
               <div key={subject.subject_id} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">{subject.subject_name}</p>
-                  <p className="text-sm text-gray-500">{subject.schedule}</p>
+                  <p className="text-sm text-gray-500">{formatSchedules(subject.schedules)}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-green-600 text-lg">{subject.attendance_rate}%</p>
@@ -511,7 +523,7 @@ const Dashboard = () => {
               <div key={subject.subject_id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">{subject.subject_name}</p>
-                  <p className="text-sm text-gray-500">{subject.schedule}</p>
+                  <p className="text-sm text-gray-500">{formatSchedules(subject.schedules)}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-red-600 text-lg">{subject.absent_rate}%</p>

@@ -1,3 +1,4 @@
+// models/Student.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
@@ -10,10 +11,7 @@ const Student = sequelize.define('Student', {
   student_number: {
     type: DataTypes.STRING(20),
     allowNull: false,
-    unique: true,
-    validate: {
-      is: /^\d{5}[A-Z]{2}-\d{6}$/
-    }
+    unique: true
   },
   name: {
     type: DataTypes.STRING(100),

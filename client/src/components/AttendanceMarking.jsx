@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Save, CheckCircle, XCircle, Clock, Download } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Save, CheckCircle, XCircle, Clock, Download, AlertCircle, Info } from 'lucide-react';
 import { attendanceAPI, studentAPI, subjectAPI } from '../api/clientAPI';
 import { exportToPDF } from '../utils/exportUtils';
 
@@ -8,33 +8,66 @@ const AttendanceMarking = () => {
   const [subjects, setSubjects] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedSchedule, setSelectedSchedule] = useState('');
   const [attendance, setAttendance] = useState({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [scheduleWarning, setScheduleWarning] = useState('');
+  const [availableSchedules, setAvailableSchedules] = useState([]);
 
   useEffect(() => {
     fetchData();
   }, []);
 
   useEffect(() => {
-    const fetchExistingAttendance = async () => {
-      try {
-        const response = await attendanceAPI.getSubjectRecords(selectedSubject, { date: selectedDate });
-        const existingAttendance = {};
-        response.data.forEach(record => {
-          existingAttendance[record.student_number] = record.status;
-        });
-        setAttendance(existingAttendance);
-      } catch (error) {
-        console.error('Error fetching existing attendance:', error);
-        setAttendance({});
-      }
-    }; // This closing brace was missing
-
     if (selectedSubject && selectedDate) {
+      validateSchedule();
       fetchExistingAttendance();
     }
-  }, [selectedSubject, selectedDate]);
+  }, [selectedSubject, selectedDate, validateSchedule, fetchExistingAttendance]);
+
+  const validateSchedule = useCallback(() => {
+    const subject = subjects.find(s => s.id === parseInt(selectedSubject));
+    if (!subject) return;
+
+    const dateObj = new Date(selectedDate);
+    const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+
+    // Filter schedules that match the selected day
+    const matchingSchedules = subject.schedules?.filter(
+      schedule => schedule.day_of_week === dayOfWeek
+    ) || [];
+
+    setAvailableSchedules(matchingSchedules);
+
+    if (matchingSchedules.length === 0) {
+      setScheduleWarning(`⚠️ No class scheduled for ${subject.name} on ${dayOfWeek}`);
+      setSelectedSchedule('');
+    } else {
+      setScheduleWarning('');
+      // Auto-select first schedule if only one available
+      if (matchingSchedules.length === 1) {
+        setSelectedSchedule(matchingSchedules[0].id.toString());
+      }
+    }
+  }, [subjects, selectedSubject, selectedDate]);
+
+  const fetchExistingAttendance = useCallback(async () => {
+    try {
+      const response = await attendanceAPI.getClass({
+        date: selectedDate,
+        subjectId: selectedSubject
+      });
+      const existingAttendance = {};
+      response.data.forEach(record => {
+        existingAttendance[record.student_number] = record.status;
+      });
+      setAttendance(existingAttendance);
+    } catch (error) {
+      console.error('Error fetching existing attendance:', error);
+      setAttendance({});
+    }
+  }, [selectedDate, selectedSubject]);
 
   const fetchData = async () => {
     try {
@@ -43,15 +76,12 @@ const AttendanceMarking = () => {
         subjectAPI.getAll()
       ]);
 
-      // Debug: Check what subjects data looks like
-      console.log('Subjects API response:', subjectsRes.data);
+      console.log('Subjects with schedules:', subjectsRes.data);
 
-      // Sort students alphabetically by name
       const sortedStudents = studentsRes.data.sort((a, b) => 
         a.name.localeCompare(b.name)
       );
 
-      // Sort subjects alphabetically by name
       const sortedSubjects = subjectsRes.data.sort((a, b) => 
         a.name.localeCompare(b.name)
       );
@@ -59,7 +89,7 @@ const AttendanceMarking = () => {
       setStudents(sortedStudents);
       setSubjects(sortedSubjects);
       if (sortedSubjects.length > 0) {
-        setSelectedSubject(sortedSubjects[0].id);
+        setSelectedSubject(sortedSubjects[0].id.toString());
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -79,31 +109,44 @@ const AttendanceMarking = () => {
       return;
     }
 
+    if (!selectedSchedule) {
+      alert('Please select a schedule for this class');
+      return;
+    }
+
+    if (scheduleWarning) {
+      const confirm = window.confirm(
+        'Warning: No class is scheduled on this day. Do you want to continue anyway?'
+      );
+      if (!confirm) return;
+    }
+
     setSaving(true);
     try {
       const attendanceRecords = Object.entries(attendance).map(([studentNumber, status]) => ({
-        student_number: studentNumber,
+        studentNumber,
         status
       }));
 
       await attendanceAPI.mark({
         date: selectedDate,
-        subject_id: selectedSubject,
-        records: attendanceRecords
+        subjectId: parseInt(selectedSubject),
+        scheduleId: parseInt(selectedSchedule),
+        attendanceRecords
       });
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Error saving attendance:', error);
-      alert('Error saving attendance');
+      alert(error.response?.data?.error || 'Error saving attendance');
     } finally {
       setSaving(false);
     }
   };
 
   const handleExportPDF = () => {
-    const selectedSubjectObj = subjects.find(sub => sub.id === selectedSubject);
+    const selectedSubjectObj = subjects.find(sub => sub.id === parseInt(selectedSubject));
     exportToPDF(students, attendance, selectedDate, selectedSubjectObj);
   };
 
@@ -129,12 +172,26 @@ const AttendanceMarking = () => {
     const present = Object.values(attendance).filter(status => status === 'present').length;
     const absent = Object.values(attendance).filter(status => status === 'absent').length;
     const late = Object.values(attendance).filter(status => status === 'late').length;
-    //const totalMarked = present + absent + late;
     
     return { present, absent, late };
   };
 
   const stats = getAttendanceStats();
+
+  const formatScheduleTime = (schedule) => {
+    if (!schedule) return '';
+    const startTime = new Date(`2000-01-01T${schedule.start_time}`).toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    const endTime = new Date(`2000-01-01T${schedule.end_time}`).toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    return `${schedule.day_of_week} | ${startTime} - ${endTime}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -156,7 +213,7 @@ const AttendanceMarking = () => {
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || !selectedSchedule}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
           >
             <Save className="w-4 h-4 mr-2" />
@@ -164,6 +221,18 @@ const AttendanceMarking = () => {
           </button>
         </div>
       </div>
+
+      {/* Schedule Warning */}
+      {scheduleWarning && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="flex">
+            <AlertCircle className="h-5 w-5 text-yellow-400 mr-2" />
+            <div>
+              <p className="text-sm text-yellow-700">{scheduleWarning}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters and Stats */}
       <div className="bg-white p-6 rounded-lg shadow">
@@ -179,6 +248,7 @@ const AttendanceMarking = () => {
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Subject
@@ -191,11 +261,38 @@ const AttendanceMarking = () => {
               <option value="">Select Subject</option>
               {subjects.map(subject => (
                 <option key={subject.id} value={subject.id}>
-                  {subject.name} - {subject.schedule}
+                  {subject.code} - {subject.name}
                 </option>
               ))}
             </select>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Schedule *
+            </label>
+            <select
+              value={selectedSchedule}
+              onChange={(e) => setSelectedSchedule(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={availableSchedules.length === 0}
+            >
+              <option value="">
+                {availableSchedules.length === 0 ? 'No schedule available' : 'Select Schedule'}
+              </option>
+              {availableSchedules.map(schedule => (
+                <option key={schedule.id} value={schedule.id}>
+                  {formatScheduleTime(schedule)}
+                </option>
+              ))}
+            </select>
+            {availableSchedules.length === 0 && selectedSubject && (
+              <p className="text-xs text-red-500 mt-1">
+                No class scheduled on this day
+              </p>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Total Students
@@ -203,6 +300,21 @@ const AttendanceMarking = () => {
             <p className="text-lg font-semibold text-gray-900">{students.length}</p>
           </div>
         </div>
+
+        {/* Info Box */}
+        {selectedSchedule && (
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-start">
+              <Info className="w-5 h-5 text-blue-600 mr-2 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium">Selected Schedule:</p>
+                <p>
+                  {formatScheduleTime(availableSchedules.find(s => s.id === parseInt(selectedSchedule)))}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">

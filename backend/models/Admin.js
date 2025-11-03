@@ -1,7 +1,6 @@
 // models/Admin.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
-import bcrypt from 'bcryptjs';
 
 const Admin = sequelize.define('Admin', {
   id: {
@@ -17,21 +16,18 @@ const Admin = sequelize.define('Admin', {
   password_hash: {
     type: DataTypes.STRING(255),
     allowNull: false
+  },
+  full_name: {
+    type: DataTypes.STRING(100)
+  },
+  last_login: {
+    type: DataTypes.DATE
   }
 }, {
   tableName: 'admins',
   timestamps: true,
-  hooks: {
-    beforeCreate: async (admin) => {
-      if (admin.password_hash) {
-        admin.password_hash = await bcrypt.hash(admin.password_hash, 12);
-      }
-    }
-  }
+  createdAt: 'created_at',
+  updatedAt: false
 });
-
-Admin.prototype.validatePassword = async function(password) {
-  return await bcrypt.compare(password, this.password_hash);
-};
 
 export default Admin;

@@ -1,5 +1,5 @@
-// backend/models/Subject.js
-import { DataTypes, QueryTypes } from 'sequelize';
+// models/Subject.js
+import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
 const Subject = sequelize.define('Subject', {
@@ -8,12 +8,13 @@ const Subject = sequelize.define('Subject', {
     primaryKey: true,
     autoIncrement: true
   },
+  code: {
+    type: DataTypes.STRING(20),
+    allowNull: false
+  },
   name: {
     type: DataTypes.STRING(100),
     allowNull: false
-  },
-  schedule: {
-    type: DataTypes.STRING(100)
   },
   room: {
     type: DataTypes.STRING(50)

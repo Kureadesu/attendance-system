@@ -1,10 +1,19 @@
 // controllers/subjectController.js
-import { Subject } from '../models/index.js';
+import { Subject, SubjectSchedule } from '../models/index.js';
 
 export const getAllSubjects = async (req, res) => {
   try {
     const subjects = await Subject.findAll({
-      order: [['name', 'ASC']]
+      include: [{
+        model: SubjectSchedule,
+        as: 'schedules',
+        attributes: ['id', 'day_of_week', 'start_time', 'end_time']
+      }],
+      order: [
+        ['code', 'ASC'],
+        [{ model: SubjectSchedule, as: 'schedules' }, 'day_of_week', 'ASC'],
+        [{ model: SubjectSchedule, as: 'schedules' }, 'start_time', 'ASC']
+      ]
     });
 
     res.json(subjects);
@@ -14,22 +23,25 @@ export const getAllSubjects = async (req, res) => {
   }
 };
 
-export const createSubject = async (req, res) => {
+export const getSubjectById = async (req, res) => {
   try {
-    const { name, schedule, room } = req.body;
+    const { id } = req.params;
 
-    const subject = await Subject.create({
-      name,
-      schedule,
-      room
+    const subject = await Subject.findByPk(id, {
+      include: [{
+        model: SubjectSchedule,
+        as: 'schedules',
+        attributes: ['id', 'day_of_week', 'start_time', 'end_time']
+      }]
     });
 
-    res.status(201).json({
-      message: 'Subject created successfully',
-      subject
-    });
+    if (!subject) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
+    res.json(subject);
   } catch (error) {
-    console.error('Create subject error:', error);
-    res.status(500).json({ error: 'Failed to create subject' });
+    console.error('Get subject error:', error);
+    res.status(500).json({ error: 'Failed to fetch subject' });
   }
 };
