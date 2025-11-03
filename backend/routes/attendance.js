@@ -1,17 +1,18 @@
 // routes/attendance.js
 import express from 'express';
-import { 
-  markAttendance, 
-  getAttendanceSummary, 
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import {
+  markAttendance,
+  getAttendanceSummary,
   getClassAttendance,
-  getAttendanceTrend 
+  getAttendanceTrend
 } from '../controllers/attendanceController.js';
 
 const router = express.Router();
 
 // Mark attendance with schedule validation
 // POST /api/attendance/mark
-router.post('/mark', markAttendance);
+router.post('/mark', authenticateToken, requireAdmin, markAttendance);
 
 // Get attendance summary with date range filtering
 // GET /api/attendance/summary?range=today|week|month|custom

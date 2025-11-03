@@ -39,7 +39,7 @@ const StudentProfile = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading student data...</div>
+        <div className="text-lg text-gray-300">Loading student data...</div>
       </div>
     );
   }
@@ -47,7 +47,7 @@ const StudentProfile = () => {
   if (!studentData) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-red-600">Student not found</div>
+        <div className="text-lg text-red-300">Student not found</div>
       </div>
     );
   }
@@ -80,8 +80,8 @@ const StudentProfile = () => {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{student.name}</h1>
-          <div className="flex items-center space-x-4 mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-white">{student.name}</h1>
+          <div className="flex items-center space-x-4 mt-2 text-gray-300">
             <div className="flex items-center">
               <User className="w-4 h-4 mr-2" />
               <span className="font-mono">{studentNumber}</span>
@@ -132,8 +132,8 @@ const StudentProfile = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Attendance Distribution */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Attendance Distribution</h3>
+        <div className="bg-gray-800 p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4 text-white">Attendance Distribution</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -150,20 +150,20 @@ const StudentProfile = () => {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', color: '#F9FAFB' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
         {/* Subject-wise Performance */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Subject-wise Performance</h3>
+        <div className="bg-gray-800 p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4 text-white">Subject-wise Performance</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="subject" angle={-45} textAnchor="end" height={80} />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="subject" angle={-45} textAnchor="end" height={80} stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', color: '#F9FAFB' }} />
               <Legend />
               <Bar dataKey="present" fill="#10b981" name="Present" />
               <Bar dataKey="absent" fill="#ef4444" name="Absent" />
@@ -174,14 +174,14 @@ const StudentProfile = () => {
       </div>
 
       {/* Attendance History */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b">
+      <div className="bg-gray-800 rounded-lg shadow">
+        <div className="p-6 border-b border-gray-600">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">Attendance History</h3>
+            <h3 className="text-lg font-semibold text-white">Attendance History</h3>
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+              className="border border-gray-600 rounded-md px-3 py-1 text-sm bg-gray-700 text-white"
             >
               <option value="week">Last Week</option>
               <option value="month">Last Month</option>
@@ -190,56 +190,56 @@ const StudentProfile = () => {
           </div>
         </div>
         <div className="overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-600">
+            <thead className="bg-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                   Subject
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                   Schedule
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                   Room
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                   Remarks
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-gray-800 divide-y divide-gray-600">
               {attendance.map((record) => (
                 <tr key={record.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                     {new Date(record.date).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                     {record.Subject?.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {record.Subject?.schedule}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {record.Subject?.room}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      record.status === 'present' 
-                        ? 'bg-green-100 text-green-800'
+                      record.status === 'present'
+                        ? 'bg-green-900 text-green-300'
                         : record.status === 'absent'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
+                        ? 'bg-red-900 text-red-300'
+                        : 'bg-yellow-900 text-yellow-300'
                     }`}>
                       {record.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-300">
                     {record.remarks || '-'}
                   </td>
                 </tr>
@@ -254,22 +254,22 @@ const StudentProfile = () => {
 
 const StatCard = ({ title, value, color }) => {
   const colorClasses = {
-    green: 'bg-green-50 border-green-200',
-    red: 'bg-red-50 border-red-200',
-    yellow: 'bg-yellow-50 border-yellow-200',
-    blue: 'bg-blue-50 border-blue-200'
+    green: 'bg-gray-800 border-gray-600',
+    red: 'bg-gray-800 border-gray-600',
+    yellow: 'bg-gray-800 border-gray-600',
+    blue: 'bg-gray-800 border-gray-600'
   };
 
   const textColors = {
-    green: 'text-green-700',
-    red: 'text-red-700',
-    yellow: 'text-yellow-700',
-    blue: 'text-blue-700'
+    green: 'text-green-400',
+    red: 'text-red-400',
+    yellow: 'text-yellow-400',
+    blue: 'text-blue-400'
   };
 
   return (
     <div className={`p-4 rounded-lg border ${colorClasses[color]}`}>
-      <h3 className="text-sm font-medium text-gray-600">{title}</h3>
+      <h3 className="text-sm font-medium text-gray-300">{title}</h3>
       <p className={`text-2xl font-bold ${textColors[color]}`}>{value}</p>
     </div>
   );

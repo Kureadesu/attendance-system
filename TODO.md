@@ -1,25 +1,35 @@
-# TODO: Update Dashboard.jsx for New Subject Format
+# Attendance System Enhancements
 
-## Information Gathered
-- Subjects now have a `schedules` array (from SubjectSchedule model) instead of a single `schedule` string.
-- Backend `attendanceController.js` currently sets `schedule: s.subject.room` in subject stats, which is incorrect.
-- Frontend `Dashboard.jsx` displays `subject.schedule` as a string in "Best Performing Subjects" and "Subjects Needing Attention" sections.
-- Need to update backend to include schedules array in subject stats response.
-- Need to update frontend to format and display the schedules array properly.
+## Task: Implement Exemption, Logging, Dark Theme, and Top 3 Display Features
 
-## Plan
-1. Update `backend/controllers/attendanceController.js`:
-   - Modify the subject stats query to include SubjectSchedule in the Subject include.
-   - Update the mapping to include `schedules` array instead of `schedule` string.
+### Status: In Progress
 
-2. Update `client/src/components/Dashboard.jsx`:
-   - Replace `subject.schedule` with formatted string from `subject.schedules` array.
-   - Format as: "Day HH:MM-HH:MM, Day HH:MM-HH:MM, ..."
+### Features to Implement:
+- [ ] **Exemption Functionality**: Add ability to exempt attendance when instructor announces no classes
+- [ ] **Logging System**: Add logs for attendance records and operations
+- [ ] **Dark Theme**: Implement dark theme using #121212 and #e37500 colors
+- [ ] **Top 3 Display**: Show only top 3 highest attendances, absentees, late students, and top 3 most/least attended classes
 
-## Dependent Files to Edit
-- `backend/controllers/attendanceController.js`
-- `client/src/components/Dashboard.jsx`
+### Backend Changes:
+- [ ] Create Exemption model and table
+- [ ] Create AttendanceLog model and table
+- [ ] Update attendance controller to handle exemptions
+- [ ] Add logging to attendance operations
+- [ ] Update database schema
 
-## Followup Steps
-- Test the dashboard by refreshing to ensure subject schedules display correctly.
-- If needed, implement additional features like Schedule Viewer page or Current Class widget.
+### Frontend Changes:
+- [ ] Implement dark theme with #121212 and #e37500 colors
+- [ ] Update Dashboard component to show top 3 items only
+- [ ] Update Layout component for dark theme
+- [ ] Update CSS files for dark theme support
+
+### Database Changes:
+- [ ] Add exemptions table
+- [ ] Add attendance_logs table
+- [ ] Update existing tables if needed
+
+### Testing:
+- [ ] Test exemption functionality
+- [ ] Test logging system
+- [ ] Test dark theme toggle
+- [ ] Test top 3 display functionality

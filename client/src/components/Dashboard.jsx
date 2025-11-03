@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Users, TrendingUp, AlertTriangle, BookOpen, RefreshCw, Calendar, Award, Skull, Clock, Filter } from 'lucide-react';
@@ -194,7 +194,7 @@ const Dashboard = () => {
     const allSubjects = subjectStats.all_subjects || [];
     return allSubjects
       .sort((a, b) => b.absent_rate - a.absent_rate)
-      .slice(0, 5);
+      .slice(0, 3);
   };
 
   const studentViewData = getStudentData();
@@ -204,11 +204,11 @@ const Dashboard = () => {
   const CustomPieTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-300 rounded shadow">
+        <div className="bg-gray-800 p-3 border border-gray-600 rounded shadow text-white">
           <p className="font-semibold">{payload[0].name}</p>
-          <p className="text-gray-600">Records: {payload[0].payload.count}</p>
-          <p className="text-gray-600">
-            Percentage: {stats.totalRecords > 0 ? 
+          <p className="text-gray-300">Records: {payload[0].payload.count}</p>
+          <p className="text-gray-300">
+            Percentage: {stats.totalRecords > 0 ?
               ((payload[0].value / stats.totalRecords) * 100).toFixed(1) : 0}%
           </p>
         </div>
@@ -220,7 +220,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading dashboard...</div>
+        <div className="text-lg text-gray-300">Loading dashboard...</div>
       </div>
     );
   }
@@ -230,23 +230,23 @@ const Dashboard = () => {
       {/* Header with Date & Time and Filters */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 flex items-center mt-1">
+          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+          <p className="text-gray-300 flex items-center mt-1">
             <Calendar className="w-4 h-4 mr-2" />
             {currentDateTime}
           </p>
         </div>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={fetchDashboardData}
-            className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-2 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
           </button>
           <Link
             to="/mark-attendance"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-accent text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
           >
             Mark Attendance
           </Link>
@@ -254,19 +254,19 @@ const Dashboard = () => {
       </div>
 
       {/* Date Range Filter */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-gray-800 p-6 rounded-lg shadow">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Viewing Data For:</h3>
-            <span className="text-lg font-bold text-blue-600">{getRangeLabel()}</span>
+            <Filter className="w-5 h-5 text-gray-300" />
+            <h3 className="text-lg font-semibold text-white">Viewing Data For:</h3>
+            <span className="text-lg font-bold text-accent">{getRangeLabel()}</span>
           </div>
-          
+
           <div className="flex flex-wrap gap-3">
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-gray-600 rounded-md px-3 py-2 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-accent"
             >
               <option value="today">Today</option>
               <option value="week">Last 7 Days</option>
@@ -280,15 +280,15 @@ const Dashboard = () => {
                   type="date"
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="border border-gray-600 rounded-md px-3 py-2 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder="Start Date"
                 />
-                <span className="flex items-center text-gray-500">to</span>
+                <span className="flex items-center text-gray-300">to</span>
                 <input
                   type="date"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="border border-gray-600 rounded-md px-3 py-2 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder="End Date"
                 />
               </div>
@@ -298,10 +298,10 @@ const Dashboard = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-900 border border-red-700 rounded-lg p-4">
           <div className="flex items-center">
-            <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
-            <span className="text-red-700">{error}</span>
+            <AlertTriangle className="w-5 h-5 text-red-400 mr-2" />
+            <span className="text-red-200">{error}</span>
           </div>
         </div>
       )}
@@ -341,8 +341,8 @@ const Dashboard = () => {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Attendance Distribution */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">
+        <div className="bg-gray-800 p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4 text-white">
             Attendance Distribution - {getRangeLabel()}
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -368,19 +368,19 @@ const Dashboard = () => {
         </div>
 
         {/* Attendance Trend */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Attendance Trend (Last 7 Days)</h3>
+        <div className="bg-gray-800 p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4 text-white">Attendance Trend (Last 7 Days)</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={attendanceTrendData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="date" stroke="#9CA3AF" />
+              <YAxis domain={[0, 100]} stroke="#9CA3AF" />
+              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', color: '#F9FAFB' }} />
               <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="rate" 
-                stroke="#8884d8" 
+              <Line
+                type="monotone"
+                dataKey="rate"
+                stroke="#e37500"
                 name="Attendance Rate %"
                 strokeWidth={2}
               />
@@ -390,9 +390,9 @@ const Dashboard = () => {
       </div>
 
       {/* Consolidated Student Performance */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-gray-800 p-6 rounded-lg shadow">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-white">
             Attendance Metrics - {getRangeLabel()}
           </h3>
           <div className="flex gap-2 mt-2 lg:mt-0">
@@ -400,8 +400,8 @@ const Dashboard = () => {
               onClick={() => setStudentView('attendance')}
               className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                 studentView === 'attendance'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-accent text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
               <Award className="w-4 h-4" />
@@ -412,7 +412,7 @@ const Dashboard = () => {
               className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                 studentView === 'absent'
                   ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
               <Skull className="w-4 h-4" />
@@ -423,7 +423,7 @@ const Dashboard = () => {
               className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                 studentView === 'late'
                   ? 'bg-yellow-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
               <Clock className="w-4 h-4" />
@@ -433,45 +433,45 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {studentViewData.data.slice(0, 6).map((student, index) => (
-            <div 
-              key={student.student_number} 
+          {studentViewData.data.slice(0, 3).map((student, index) => (
+            <div
+              key={student.student_number}
               className={`p-4 rounded-lg border-l-4 ${
-                studentView === 'attendance' ? 'border-green-500 bg-green-50' :
-                studentView === 'absent' ? 'border-red-500 bg-red-50' :
-                'border-yellow-500 bg-yellow-50'
+                studentView === 'attendance' ? 'border-green-500 bg-gray-700' :
+                studentView === 'absent' ? 'border-red-500 bg-gray-700' :
+                'border-yellow-500 bg-gray-700'
               }`}
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-3">
                   <div className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
-                    studentView === 'attendance' ? 'bg-green-100 text-green-600' :
-                    studentView === 'absent' ? 'bg-red-100 text-red-600' :
-                    'bg-yellow-100 text-yellow-600'
+                    studentView === 'attendance' ? 'bg-green-600 text-white' :
+                    studentView === 'absent' ? 'bg-red-600 text-white' :
+                    'bg-yellow-600 text-white'
                   }`}>
                     {index + 1}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{student.student_name}</p>
-                    <p className="text-sm text-gray-500">{student.section}</p>
+                    <p className="font-medium text-white">{student.student_name}</p>
+                    <p className="text-sm text-gray-300">{student.section}</p>
                   </div>
                 </div>
                 <span className={`text-lg font-bold ${
-                  studentView === 'attendance' ? 'text-green-600' :
-                  studentView === 'absent' ? 'text-red-600' :
-                  'text-yellow-600'
+                  studentView === 'attendance' ? 'text-green-400' :
+                  studentView === 'absent' ? 'text-red-400' :
+                  'text-yellow-400'
                 }`}>
                   {student[studentViewData.valueKey]}{studentViewData.valueSuffix}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-sm text-gray-300 mt-2">
                 {studentViewData.description(student)}
               </p>
               {studentView === 'attendance' && (
                 <div className="mt-2">
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-green-500 h-2 rounded-full" 
+                  <div className="w-full bg-gray-600 rounded-full h-2">
+                    <div
+                      className="bg-green-500 h-2 rounded-full"
                       style={{ width: `${student.attendance_rate}%` }}
                     ></div>
                   </div>
@@ -482,7 +482,7 @@ const Dashboard = () => {
         </div>
 
         {studentViewData.data.length === 0 && (
-          <p className="text-gray-500 text-center py-8">
+          <p className="text-gray-400 text-center py-8">
             No {studentView} data available for this period
           </p>
         )}
@@ -491,59 +491,59 @@ const Dashboard = () => {
       {/* Subject Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Best Performing Subjects */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">
+        <div className="bg-gray-800 p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4 text-white">
             Best Performing Subjects - {getRangeLabel()}
           </h3>
           <div className="space-y-3">
-            {subjectStats.highest_attendance?.slice(0, 5).map((subject, index) => (
-              <div key={subject.subject_id} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+            {subjectStats.highest_attendance?.slice(0, 3).map((subject, index) => (
+              <div key={subject.subject_id} className="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">{subject.subject_name}</p>
-                  <p className="text-sm text-gray-500">{formatSchedules(subject.schedules)}</p>
+                  <p className="font-medium text-white">{subject.subject_name}</p>
+                  <p className="text-sm text-gray-300">{formatSchedules(subject.schedules)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-green-600 text-lg">{subject.attendance_rate}%</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-semibold text-green-400 text-lg">{subject.attendance_rate}%</p>
+                  <p className="text-xs text-gray-400">
                     {subject.present} present / {subject.total_records} total
                   </p>
                 </div>
               </div>
-            )) || <p className="text-gray-500 text-center py-4">No subject data available for this period</p>}
+            )) || <p className="text-gray-400 text-center py-4">No subject data available for this period</p>}
           </div>
         </div>
 
         {/* Subjects Needing Attention - FIXED: Now shows highest absent rate */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">
+        <div className="bg-gray-800 p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4 text-white">
             Subjects Needing Attention - {getRangeLabel()}
           </h3>
           <div className="space-y-3">
             {subjectsNeedingAttention.map((subject, index) => (
-              <div key={subject.subject_id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+              <div key={subject.subject_id} className="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">{subject.subject_name}</p>
-                  <p className="text-sm text-gray-500">{formatSchedules(subject.schedules)}</p>
+                  <p className="font-medium text-white">{subject.subject_name}</p>
+                  <p className="text-sm text-gray-300">{formatSchedules(subject.schedules)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-red-600 text-lg">{subject.absent_rate}%</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-semibold text-red-400 text-lg">{subject.absent_rate}%</p>
+                  <p className="text-xs text-gray-400">
                     {subject.absent} absent / {subject.total_records} total
                   </p>
                 </div>
               </div>
-            )) || <p className="text-gray-500 text-center py-4">No subject data available for this period</p>}
+            )) || <p className="text-gray-400 text-center py-4">No subject data available for this period</p>}
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h4 className="font-semibold text-gray-900 mb-4">Quick Actions</h4>
+      <div className="bg-gray-800 p-6 rounded-lg shadow">
+        <h4 className="font-semibold text-white mb-4">Quick Actions</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             to="/mark-attendance"
-            className="bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="bg-accent text-white text-center py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium"
           >
             Mark Attendance
           </Link>
@@ -553,9 +553,9 @@ const Dashboard = () => {
           >
             View Class List
           </Link>
-          <button 
+          <button
             onClick={fetchDashboardData}
-            className="bg-gray-600 text-white text-center py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium"
+            className="bg-gray-700 text-white text-center py-3 rounded-lg hover:bg-gray-600 transition-colors font-medium"
           >
             Refresh Data
           </button>
@@ -567,23 +567,23 @@ const Dashboard = () => {
 
 const StatCard = ({ icon: Icon, title, value, color, description }) => {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    red: 'bg-red-50 text-red-600',
-    purple: 'bg-purple-50 text-purple-600'
+    blue: 'bg-blue-900 text-blue-300',
+    green: 'bg-green-900 text-green-300',
+    red: 'bg-red-900 text-red-300',
+    purple: 'bg-purple-900 text-purple-300'
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
+    <div className="bg-gray-800 p-6 rounded-lg shadow">
       <div className="flex items-center">
         <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
           <Icon className="w-6 h-6" />
         </div>
         <div className="ml-4">
-          <h3 className="text-sm font-medium text-gray-600">{title}</h3>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <h3 className="text-sm font-medium text-gray-300">{title}</h3>
+          <p className="text-2xl font-bold text-white">{value}</p>
           {description && (
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
+            <p className="text-xs text-gray-400 mt-1">{description}</p>
           )}
         </div>
       </div>

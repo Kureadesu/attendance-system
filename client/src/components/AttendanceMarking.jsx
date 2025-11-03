@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Save, CheckCircle, XCircle, Clock, Download, AlertCircle, Info } from 'lucide-react';
-import { attendanceAPI, studentAPI, subjectAPI } from '../api/clientAPI';
+import { Save, CheckCircle, XCircle, Clock, Download, AlertCircle, Info, Shield } from 'lucide-react';
+import { attendanceAPI, studentAPI, subjectAPI, exemptionAPI } from '../api/clientAPI';
 import { exportToPDF } from '../utils/exportUtils';
 
 const AttendanceMarking = () => {
@@ -14,10 +14,31 @@ const AttendanceMarking = () => {
   const [saved, setSaved] = useState(false);
   const [scheduleWarning, setScheduleWarning] = useState('');
   const [availableSchedules, setAvailableSchedules] = useState([]);
+  const [isExempted, setIsExempted] = useState(false);
+  const [exemptionInfo, setExemptionInfo] = useState(null);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  const checkExemption = useCallback(async () => {
+    if (!selectedSubject || !selectedDate) return;
+
+    try {
+      const response = await exemptionAPI.check({
+        subjectId: selectedSubject,
+        scheduleId: selectedSchedule || undefined,
+        date: selectedDate
+      });
+
+      setIsExempted(response.data.isExempted);
+      setExemptionInfo(response.data.exemption);
+    } catch (error) {
+      console.error('Error checking exemption:', error);
+      setIsExempted(false);
+      setExemptionInfo(null);
+    }
+  }, [selectedSubject, selectedSchedule, selectedDate]);
 
   const validateSchedule = useCallback(() => {
     const subject = subjects.find(s => s.id === parseInt(selectedSubject));
@@ -65,9 +86,10 @@ const AttendanceMarking = () => {
   useEffect(() => {
     if (selectedSubject && selectedDate) {
       validateSchedule();
+      checkExemption();
       fetchExistingAttendance();
     }
-  }, [selectedSubject, selectedDate, validateSchedule, fetchExistingAttendance]);
+  }, [selectedSubject, selectedDate, validateSchedule, checkExemption, fetchExistingAttendance]);
 
   const fetchData = async () => {
     try {
@@ -78,14 +100,14 @@ const AttendanceMarking = () => {
 
       console.log('Subjects with schedules:', subjectsRes.data);
 
-      const sortedStudents = studentsRes.data.sort((a, b) => 
+      const sortedStudents = studentsRes.data.sort((a, b) =>
         a.name.localeCompare(b.name)
       );
 
-      const sortedSubjects = subjectsRes.data.sort((a, b) => 
+      const sortedSubjects = subjectsRes.data.sort((a, b) =>
         a.name.localeCompare(b.name)
       );
-      
+
       setStudents(sortedStudents);
       setSubjects(sortedSubjects);
       if (sortedSubjects.length > 0) {
@@ -112,6 +134,13 @@ const AttendanceMarking = () => {
     if (!selectedSchedule) {
       alert('Please select a schedule for this class');
       return;
+    }
+
+    if (isExempted) {
+      const confirm = window.confirm(
+        'This class is marked as exempted. Are you sure you want to mark attendance anyway?'
+      );
+      if (!confirm) return;
     }
 
     if (scheduleWarning) {
@@ -147,15 +176,15 @@ const AttendanceMarking = () => {
 
   const handleExportPDF = () => {
     const selectedSubjectObj = subjects.find(sub => sub.id === parseInt(selectedSubject));
-    exportToPDF(students, attendance, selectedDate, selectedSubjectObj);
+    exportToPDF(students, attendance, selectedDate, selectedSubjectObj, selectedSchedule);
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'present': return 'bg-green-100 text-green-800 border-green-300';
-      case 'absent': return 'bg-red-100 text-red-800 border-red-300';
-      case 'late': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'present': return 'bg-green-900 text-green-300 border-green-700';
+      case 'absent': return 'bg-red-900 text-red-300 border-red-700';
+      case 'late': return 'bg-yellow-900 text-yellow-300 border-yellow-700';
+      default: return 'bg-gray-900 text-gray-300 border-gray-700';
     }
   };
 
@@ -172,7 +201,7 @@ const AttendanceMarking = () => {
     const present = Object.values(attendance).filter(status => status === 'present').length;
     const absent = Object.values(attendance).filter(status => status === 'absent').length;
     const late = Object.values(attendance).filter(status => status === 'late').length;
-    
+
     return { present, absent, late };
   };
 
@@ -180,15 +209,15 @@ const AttendanceMarking = () => {
 
   const formatScheduleTime = (schedule) => {
     if (!schedule) return '';
-    const startTime = new Date(`2000-01-01T${schedule.start_time}`).toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    const startTime = new Date(`2000-01-01T${schedule.start_time}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
-    const endTime = new Date(`2000-01-01T${schedule.end_time}`).toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    const endTime = new Date(`2000-01-01T${schedule.end_time}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
     return `${schedule.day_of_week} | ${startTime} - ${endTime}`;
   };
@@ -196,10 +225,10 @@ const AttendanceMarking = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Mark Attendance</h1>
+        <h1 className="text-3xl font-bold text-white">Mark Attendance</h1>
         <div className="flex items-center space-x-4">
           {saved && (
-            <span className="text-green-600 flex items-center">
+            <span className="text-green-400 flex items-center">
               <CheckCircle className="w-5 h-5 mr-1" />
               Attendance saved successfully!
             </span>
@@ -214,7 +243,7 @@ const AttendanceMarking = () => {
           <button
             onClick={handleSave}
             disabled={saving || !selectedSchedule}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
+            className="bg-accent text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center"
           >
             <Save className="w-4 h-4 mr-2" />
             {saving ? 'Saving...' : 'Save Attendance'}
@@ -222,41 +251,57 @@ const AttendanceMarking = () => {
         </div>
       </div>
 
+      {/* Exemption Warning */}
+      {isExempted && (
+        <div className="bg-blue-900 border-l-4 border-blue-400 p-4">
+          <div className="flex">
+            <Shield className="h-5 w-5 text-blue-400 mr-2" />
+            <div>
+              <p className="text-sm text-blue-200 font-medium">Class Exempted</p>
+              <p className="text-sm text-blue-200">
+                Reason: {exemptionInfo?.reason}
+                {exemptionInfo?.schedule ? ` (Schedule: ${formatScheduleTime(exemptionInfo.schedule)})` : ' (All schedules)'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Schedule Warning */}
       {scheduleWarning && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div className="bg-yellow-900 border-l-4 border-yellow-400 p-4">
           <div className="flex">
             <AlertCircle className="h-5 w-5 text-yellow-400 mr-2" />
             <div>
-              <p className="text-sm text-yellow-700">{scheduleWarning}</p>
+              <p className="text-sm text-yellow-200">{scheduleWarning}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Filters and Stats */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-gray-800 p-6 rounded-lg shadow">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Date
             </label>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-600 rounded-md px-3 py-2 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Subject
             </label>
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-600 rounded-md px-3 py-2 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-accent"
             >
               <option value="">Select Subject</option>
               {subjects.map(subject => (
@@ -268,13 +313,13 @@ const AttendanceMarking = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Schedule *
             </label>
             <select
               value={selectedSchedule}
               onChange={(e) => setSelectedSchedule(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-600 rounded-md px-3 py-2 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-accent"
               disabled={availableSchedules.length === 0}
             >
               <option value="">
@@ -287,26 +332,26 @@ const AttendanceMarking = () => {
               ))}
             </select>
             {availableSchedules.length === 0 && selectedSubject && (
-              <p className="text-xs text-red-500 mt-1">
+              <p className="text-xs text-red-400 mt-1">
                 No class scheduled on this day
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Total Students
             </label>
-            <p className="text-lg font-semibold text-gray-900">{students.length}</p>
+            <p className="text-lg font-semibold text-white">{students.length}</p>
           </div>
         </div>
 
         {/* Info Box */}
         {selectedSchedule && (
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="mt-4 bg-blue-900 border border-blue-700 rounded-lg p-3">
             <div className="flex items-start">
-              <Info className="w-5 h-5 text-blue-600 mr-2 mt-0.5" />
-              <div className="text-sm text-blue-800">
+              <Info className="w-5 h-5 text-blue-400 mr-2 mt-0.5" />
+              <div className="text-sm text-blue-200">
                 <p className="font-medium">Selected Schedule:</p>
                 <p>
                   {formatScheduleTime(availableSchedules.find(s => s.id === parseInt(selectedSchedule)))}
@@ -315,62 +360,62 @@ const AttendanceMarking = () => {
             </div>
           </div>
         )}
-        
+
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
+        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-600">
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.present}</div>
-            <div className="text-sm text-gray-600">Present</div>
+            <div className="text-2xl font-bold text-green-400">{stats.present}</div>
+            <div className="text-sm text-gray-300">Present</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.absent}</div>
-            <div className="text-sm text-gray-600">Absent</div>
+            <div className="text-2xl font-bold text-red-400">{stats.absent}</div>
+            <div className="text-sm text-gray-300">Absent</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">{stats.late}</div>
-            <div className="text-sm text-gray-600">Late</div>
+            <div className="text-2xl font-bold text-yellow-400">{stats.late}</div>
+            <div className="text-sm text-gray-300">Late</div>
           </div>
         </div>
       </div>
 
       {/* Attendance Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-gray-800 rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-600">
+          <thead className="bg-gray-700">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 No.
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Student Number
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Section
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-gray-800 divide-y divide-gray-600">
             {students.map((student, index) => (
-              <tr key={student.student_number} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <tr key={student.student_number} className="hover:bg-gray-700">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {index + 1}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-white">
                   {student.student_number}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                   {student.name}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {student.section}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -381,7 +426,7 @@ const AttendanceMarking = () => {
                     </span>
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   <div className="flex space-x-1">
                     <button
                       onClick={() => handleStatusChange(student.student_number, 'present')}

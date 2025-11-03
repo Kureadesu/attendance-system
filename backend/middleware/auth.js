@@ -20,6 +20,7 @@ export const authenticateToken = (req, res, next) => {
 
 export const requireAdmin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
+    req.admin = req.user;
     next();
   } else {
     res.status(403).json({ error: 'Admin access required' });

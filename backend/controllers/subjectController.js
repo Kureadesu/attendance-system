@@ -4,15 +4,12 @@ import { Subject, SubjectSchedule } from '../models/index.js';
 export const getAllSubjects = async (req, res) => {
   try {
     const subjects = await Subject.findAll({
-      include: [{
-        model: SubjectSchedule,
-        as: 'schedules',
-        attributes: ['id', 'day_of_week', 'start_time', 'end_time']
-      }],
-      order: [
-        ['code', 'ASC'],
-        [{ model: SubjectSchedule, as: 'schedules' }, 'day_of_week', 'ASC'],
-        [{ model: SubjectSchedule, as: 'schedules' }, 'start_time', 'ASC']
+      include: [
+        {
+          model: SubjectSchedule,
+          as: 'schedules', // This should match the association alias
+          attributes: ['id', 'day_of_week', 'start_time', 'end_time']
+        }
       ]
     });
 

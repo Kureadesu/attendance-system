@@ -1,17 +1,36 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-export const exportToPDF = (students, attendance, date, subject) => {
+export const exportToPDF = (students, attendance, date, subject, selectedSchedule) => {
   const doc = new jsPDF();
-  
+
   // Title
   doc.setFontSize(16);
   doc.text('ATTENDANCE REPORT', 105, 15, { align: 'center' });
-  
+
+  // Find selected schedule
+  const selectedScheduleObj = subject?.schedules?.find(s => s.id === parseInt(selectedSchedule));
+
+  // Format schedule time
+  const formatScheduleTime = (schedule) => {
+    if (!schedule) return 'N/A';
+    const startTime = new Date(`2000-01-01T${schedule.start_time}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    const endTime = new Date(`2000-01-01T${schedule.end_time}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    return `${schedule.day_of_week} | ${startTime} - ${endTime}`;
+  };
+
   // Subject and Date
   doc.setFontSize(12);
   doc.text(`Subject: ${subject?.name || 'N/A'}`, 14, 25);
-  doc.text(`Schedule: ${subject?.schedule || 'N/A'}`, 14, 32);
+  doc.text(`Schedule: ${formatScheduleTime(selectedScheduleObj)}`, 14, 32);
   doc.text(`Room: ${subject?.room || 'N/A'}`, 14, 39);
   doc.text(`Date: ${date}`, 14, 46);
   

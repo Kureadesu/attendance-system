@@ -25,7 +25,7 @@ const ClassList = () => {
   const fetchStudents = async () => {
     try {
       const response = await studentAPI.getAll();
-      const sortedStudents = response.data.sort((a, b) => 
+      const sortedStudents = response.data.sort((a, b) =>
         a.name.localeCompare(b.name)
       );
       setStudents(sortedStudents);
@@ -44,7 +44,7 @@ const ClassList = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading class list...</div>
+        <div className="text-lg text-gray-300">Loading class list...</div>
       </div>
     );
   }
@@ -52,7 +52,7 @@ const ClassList = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Class List</h1>
+        <h1 className="text-3xl font-bold text-white">Class List</h1>
         <button
           onClick={handleExportPDF}
           className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
@@ -63,10 +63,10 @@ const ClassList = () => {
       </div>
 
       {/* Search and Stats */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-gray-800 p-6 rounded-lg shadow">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Search Students
             </label>
             <div className="relative">
@@ -76,24 +76,24 @@ const ClassList = () => {
                 placeholder="Search by name, student number, or section..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Total Students
             </label>
-            <p className="text-lg font-semibold text-gray-900 flex items-center">
+            <p className="text-lg font-semibold text-white flex items-center">
               <Users className="w-5 h-5 mr-2" />
               {students.length}
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Showing
             </label>
-            <p className="text-lg font-semibold text-gray-900">
+            <p className="text-lg font-semibold text-white">
               {filteredStudents.length} students
             </p>
           </div>
@@ -101,53 +101,53 @@ const ClassList = () => {
       </div>
 
       {/* Students Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-gray-800 rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-600">
+          <thead className="bg-gray-700">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 No.
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Student Number
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Section
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Year Level
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Status
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-gray-800 divide-y divide-gray-600">
             {filteredStudents.map((student, index) => (
-              <tr key={student.student_number} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <tr key={student.student_number} className="hover:bg-gray-700">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {index + 1}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-white">
                   {student.student_number}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                   {student.name}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {student.section}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {student.year_level}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    student.is_active !== false 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
+                    student.is_active !== false
+                      ? 'bg-green-900 text-green-300'
+                      : 'bg-red-900 text-red-300'
                   }`}>
                     {student.is_active !== false ? 'Active' : 'Inactive'}
                   </span>
@@ -157,7 +157,7 @@ const ClassList = () => {
           </tbody>
         </table>
         {filteredStudents.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-400">
             No students found matching your search.
           </div>
         )}

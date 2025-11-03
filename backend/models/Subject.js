@@ -23,7 +23,13 @@ const Subject = sequelize.define('Subject', {
   tableName: 'subjects',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: false
+  updatedAt: false,
+  indexes: [
+    {
+      unique: true,
+      fields: ['code', 'name']
+    }
+  ]
 });
 
 export default Subject;

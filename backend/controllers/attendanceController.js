@@ -1,5 +1,5 @@
 // controllers/attendanceController.js
-import { Attendance, Student, Subject, SubjectSchedule } from '../models/index.js';
+import { Attendance, Student, Subject, SubjectSchedule, Exemption, AttendanceLog } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/database.js';
 
@@ -28,11 +28,12 @@ const validateAttendanceSchedule = async (date, scheduleId) => {
 export const markAttendance = async (req, res) => {
   try {
     const { date, subjectId, scheduleId, attendanceRecords } = req.body;
+    console.log('Mark attendance request:', { date, subjectId, scheduleId, attendanceRecords });
 
     // Validate required fields
     if (!date || !subjectId || !scheduleId || !attendanceRecords) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: date, subjectId, scheduleId, and attendanceRecords are required' 
+      return res.status(400).json({
+        error: 'Missing required fields: date, subjectId, scheduleId, and attendanceRecords are required'
       });
     }
 
@@ -49,9 +50,29 @@ export const markAttendance = async (req, res) => {
       return res.status(404).json({ error: 'Subject not found' });
     }
 
+    // Check if the subject/schedule is exempted on this date
+    const exemption = await Exemption.findOne({
+      where: {
+        subject_id: subjectId,
+        date: date,
+        [Op.or]: [
+          { schedule_id: null }, // Subject-wide exemption
+          { schedule_id: scheduleId } // Schedule-specific exemption
+        ]
+      }
+    });
+    console.log('Exemption check result:', exemption);
+
+    if (exemption) {
+      return res.status(400).json({
+        error: `Cannot mark attendance: ${exemption.reason}`
+      });
+    }
+
     // Process attendance records
     const results = [];
-    
+    const adminId = req.user?.id; // From auth middleware
+
     for (const record of attendanceRecords) {
       // Check if student exists
       const student = await Student.findOne({
@@ -77,11 +98,26 @@ export const markAttendance = async (req, res) => {
       });
 
       if (existingAttendance) {
+        // Log the update
+        await AttendanceLog.create({
+          action: 'update',
+          student_number: record.studentNumber,
+          subject_id: subjectId,
+          schedule_id: scheduleId,
+          date: new Date(date),
+          old_status: existingAttendance.status,
+          new_status: record.status,
+          remarks: record.remarks || `Updated attendance from ${existingAttendance.status} to ${record.status}`,
+          performed_by: adminId,
+          ip_address: req.ip
+        });
+
         // Update existing record
         await existingAttendance.update({
           status: record.status,
           remarks: record.remarks || '',
-          schedule_id: scheduleId
+          schedule_id: scheduleId,
+          marked_by: adminId
         });
         results.push({
           studentNumber: record.studentNumber,
@@ -89,6 +125,19 @@ export const markAttendance = async (req, res) => {
           message: 'Attendance updated'
         });
       } else {
+        // Log the creation
+        await AttendanceLog.create({
+          action: 'create',
+          student_number: record.studentNumber,
+          subject_id: subjectId,
+          schedule_id: scheduleId,
+          date: new Date(date),
+          new_status: record.status,
+          remarks: record.remarks || 'Initial attendance record',
+          performed_by: adminId,
+          ip_address: req.ip
+        });
+
         // Create new record
         await Attendance.create({
           student_number: record.studentNumber,
@@ -96,7 +145,8 @@ export const markAttendance = async (req, res) => {
           schedule_id: scheduleId,
           date: new Date(date),
           status: record.status,
-          remarks: record.remarks || ''
+          remarks: record.remarks || '',
+          marked_by: adminId
         });
         results.push({
           studentNumber: record.studentNumber,
@@ -260,10 +310,10 @@ export const getAttendanceSummary = async (req, res) => {
       lateRate: totalRecords > 0 ? ((late / totalRecords) * 100).toFixed(2) : 0,
       studentStats: {
         all_students: studentStats,
-        highest_attendance: studentStats.sort((a, b) => b.attendance_rate - a.attendance_rate).slice(0, 10),
-        lowest_attendance: studentStats.sort((a, b) => a.attendance_rate - b.attendance_rate).slice(0, 10),
-        highest_absent: studentStats.sort((a, b) => b.absent_rate - a.absent_rate).slice(0, 10),
-        highest_late: studentStats.sort((a, b) => b.late_rate - a.late_rate).slice(0, 10)
+        highest_attendance: studentStats.sort((a, b) => b.attendance_rate - a.attendance_rate).slice(0, 3),
+        lowest_attendance: studentStats.sort((a, b) => a.attendance_rate - b.attendance_rate).slice(0, 3),
+        highest_absent: studentStats.sort((a, b) => b.absent_rate - a.absent_rate).slice(0, 3),
+        highest_late: studentStats.sort((a, b) => b.late_rate - a.late_rate).slice(0, 3)
       },
       subjectStats: {
         all_subjects: subjectStats.map(s => ({
@@ -278,8 +328,9 @@ export const getAttendanceSummary = async (req, res) => {
           attendance_rate: s.attendance_rate,
           absent_rate: s.absent_rate
         })),
-        highest_attendance: subjectStats.sort((a, b) => b.attendance_rate - a.attendance_rate).slice(0, 5),
-        highest_absent: subjectStats.sort((a, b) => b.absent_rate - a.absent_rate).slice(0, 5)
+        highest_attendance: subjectStats.sort((a, b) => b.attendance_rate - a.attendance_rate).slice(0, 3),
+        highest_absent: subjectStats.sort((a, b) => b.absent_rate - a.absent_rate).slice(0, 3),
+        lowest_attendance: subjectStats.sort((a, b) => a.attendance_rate - b.attendance_rate).slice(0, 3)
       },
       dateRange: { startDate, endDate, range }
     });

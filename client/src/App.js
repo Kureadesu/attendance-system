@@ -5,6 +5,8 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import StudentProfile from './components/StudentProfile';
 import AttendanceMarking from './components/AttendanceMarking';
+import ExemptionManagement from './components/ExemptionManagement';
+import LogViewer from './components/LogViewer';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import './index.css';
@@ -19,7 +21,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-primary">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={
@@ -33,6 +35,20 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <AttendanceMarking />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/exemptions" element={
+              <ProtectedRoute>
+                <Layout>
+                  <ExemptionManagement />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/logs" element={
+              <ProtectedRoute>
+                <Layout>
+                  <LogViewer />
                 </Layout>
               </ProtectedRoute>
             } />

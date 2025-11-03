@@ -16,6 +16,8 @@ import attendanceRoutes from './routes/attendance.js';
 import subjectRoutes from './routes/subjects.js';
 import dashboardRoutes from './routes/dashboard.js';
 import ClassList from './routes/classList.js';
+import exemptionRoutes from './routes/exemptions.js';
+import logRoutes from './routes/logs.js';
 
 dotenv.config();
 
@@ -33,7 +35,7 @@ app.use(express.json());
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 500 // limit each IP to 100 requests per windowMs
 });
 app.use(limiter);
 
@@ -44,11 +46,13 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/classlist', ClassList);
+app.use('/api/exemptions', exemptionRoutes);
+app.use('/api/logs', logRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'Attendance System API is running',
     timestamp: new Date().toISOString()
   });
@@ -71,7 +75,7 @@ app.use((err, req, res, next) => {
 
 // 404 handler for API routes - FIXED: Remove the * parameter or use proper syntax
 app.use((req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     error: 'Route not found',
     path: req.path,
     method: req.method

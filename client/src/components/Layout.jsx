@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
-import { LogOut, Users, Calendar, Home } from 'lucide-react';
+import { LogOut, Users, Calendar, Home, Shield, FileText } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const { logout } = useAuth();
@@ -11,18 +11,20 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Mark Attendance', href: '/mark-attendance', icon: Calendar },
+    { name: 'Exemptions', href: '/exemptions', icon: Shield },
+    { name: 'Logs', href: '/logs', icon: FileText },
     { name: 'Students', href: '/class-list', icon: Users },
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-primary">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
+      <div className="w-64 bg-gray-800 shadow-lg">
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b">
-            <h1 className="text-xl font-bold text-gray-800">Attendance System</h1>
-            <p className="text-sm text-gray-600">Class Management</p>
+          <div className="p-6 border-b border-gray-700">
+            <h1 className="text-xl font-bold text-white">Attendance System</h1>
+            <p className="text-sm text-gray-300">Class Management</p>
           </div>
 
           {/* Navigation */}
@@ -37,8 +39,8 @@ const Layout = ({ children }) => {
                       to={item.href}
                       className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
                         isActive
-                          ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          ? 'bg-accent text-white border-r-2 border-accent'
+                          : 'text-gray-300 hover:bg-gray-700'
                       }`}
                     >
                       <Icon className="w-5 h-5 mr-3" />
@@ -51,10 +53,10 @@ const Layout = ({ children }) => {
           </nav>
 
           {/* Logout Button */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-gray-700">
             <button
               onClick={logout}
-              className="flex items-center w-full px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center w-full px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors"
             >
               <LogOut className="w-5 h-5 mr-3" />
               Logout

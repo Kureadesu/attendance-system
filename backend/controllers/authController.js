@@ -14,7 +14,7 @@ export const login = async (req, res) => {
 
     if (username === staticAdmin.username && password === staticAdmin.password) {
       const token = jwt.sign(
-        { username: staticAdmin.username, role: 'admin' },
+        { id: 1, username: staticAdmin.username, role: 'admin' },
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
       );
