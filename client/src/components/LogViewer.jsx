@@ -5,7 +5,7 @@ import { Filter, RefreshCw } from 'lucide-react';
 
 const LogViewer = () => {
   const [logs, setLogs] = useState([]);
-  const [stats, setStats] = useState({});
+  const [setStats] = useState({});
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -35,7 +35,7 @@ const LogViewer = () => {
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  }, []);
+  }, [setStats, setRecentActivity]);
 
   useEffect(() => {
     fetchLogs();
