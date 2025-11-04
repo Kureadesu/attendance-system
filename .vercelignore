@@ -1,0 +1,6 @@
+backend/
+.git/
+README.md
+TODO.md
+Dockerfile
+LICENSE
