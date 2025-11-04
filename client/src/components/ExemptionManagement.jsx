@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, Trash2, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Plus, Trash2, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { exemptionAPI, subjectAPI } from '../api/clientAPI';
 
 const ExemptionManagement = () => {
