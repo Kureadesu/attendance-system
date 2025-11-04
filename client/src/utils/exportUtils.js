@@ -38,7 +38,7 @@ export const exportToPDF = (students, attendance, date, subject, selectedSchedul
   const present = Object.values(attendance).filter(status => status === 'present').length;
   const absent = Object.values(attendance).filter(status => status === 'absent').length;
   const late = Object.values(attendance).filter(status => status === 'late').length;
-  const totalMarked = present + absent + late;
+  // const totalMarked = present + absent + late;
   
   doc.text(`Total Students: ${students.length}`, 140, 25);
   doc.text(`Present: ${present}`, 140, 32);

@@ -1,9 +1,9 @@
 // frontend/src/components/StudentProfile.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Download, Calendar, User, Book } from 'lucide-react';
-import axios from 'axios';
+// import axios from 'axios';
 import { exportStudentPDF } from '../utils/pdfExport';
 import { studentAPI } from '../api/clientAPI';
 
@@ -15,11 +15,7 @@ const StudentProfile = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('all');
 
-  useEffect(() => {
-    fetchStudentData();
-  }, [studentNumber, timeRange]);
-
-  const fetchStudentData = async () => {
+  const fetchStudentData = useCallback(async () => {
     try {
       const response = await studentAPI.getAttendance(studentNumber, timeRange);
       setStudentData(response.data);
@@ -28,7 +24,11 @@ const StudentProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [studentNumber, timeRange]);
+
+  useEffect(() => {
+    fetchStudentData();
+  }, [fetchStudentData]);
 
   const handleExportPDF = () => {
     if (studentData) {
