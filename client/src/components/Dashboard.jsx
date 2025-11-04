@@ -34,34 +34,7 @@ const Dashboard = () => {
   const [attendanceTrendData, setAttendanceTrendData] = useState([]);
   const [logStats, setLogStats] = useState({});
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [dateRange, customStartDate, customEndDate]);
-
-  useEffect(() => {
-    fetchTrendData();
-    fetchLogStats();
-  }, []);
-
-  const fetchTrendData = async () => {
-    try {
-      const trendRes = await attendanceAPI.getTrend();
-      setAttendanceTrendData(trendRes.data);
-    } catch (error) {
-      console.error('Error fetching trend data:', error);
-    }
-  };
-
-  const fetchLogStats = async () => {
-    try {
-      const logRes = await logAPI.getStats();
-      setLogStats(logRes.data);
-    } catch (error) {
-      console.error('Error fetching log stats:', error);
-    }
-  };
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setError('');
       setLoading(true);
@@ -97,6 +70,33 @@ const Dashboard = () => {
       setError('Failed to load dashboard data. Please check if the server is running.');
     } finally {
       setLoading(false);
+    }
+  }, [dateRange, customStartDate, customEndDate]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  useEffect(() => {
+    fetchTrendData();
+    fetchLogStats();
+  }, []);
+
+  const fetchTrendData = async () => {
+    try {
+      const trendRes = await attendanceAPI.getTrend();
+      setAttendanceTrendData(trendRes.data);
+    } catch (error) {
+      console.error('Error fetching trend data:', error);
+    }
+  };
+
+  const fetchLogStats = async () => {
+    try {
+      const logRes = await logAPI.getStats();
+      setLogStats(logRes.data);
+    } catch (error) {
+      console.error('Error fetching log stats:', error);
     }
   };
 
