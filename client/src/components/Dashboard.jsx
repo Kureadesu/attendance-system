@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Users, TrendingUp, AlertTriangle, BookOpen, RefreshCw, Calendar, Award, Skull, Clock, Filter } from 'lucide-react';
-import { studentAPI, subjectAPI, attendanceAPI } from '../api/clientAPI';
+import { studentAPI, attendanceAPI, logAPI } from '../api/clientAPI';
 
 const COLORS = ['#10b981', '#ef4444', '#f59e0b'];
 
@@ -27,11 +27,12 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [dateRange, setDateRange] = useState('today');
+  const [dateRange, setDateRange] = useState('week');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [studentView, setStudentView] = useState('attendance'); // 'attendance', 'absent', 'late'
   const [attendanceTrendData, setAttendanceTrendData] = useState([]);
+  const [logStats, setLogStats] = useState({});
 
   useEffect(() => {
     fetchDashboardData();
@@ -39,6 +40,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchTrendData();
+    fetchLogStats();
   }, []);
 
   const fetchTrendData = async () => {
@@ -47,6 +49,15 @@ const Dashboard = () => {
       setAttendanceTrendData(trendRes.data);
     } catch (error) {
       console.error('Error fetching trend data:', error);
+    }
+  };
+
+  const fetchLogStats = async () => {
+    try {
+      const logRes = await logAPI.getStats();
+      setLogStats(logRes.data);
+    } catch (error) {
+      console.error('Error fetching log stats:', error);
     }
   };
 
@@ -533,6 +544,89 @@ const Dashboard = () => {
                 </div>
               </div>
             )) || <p className="text-gray-400 text-center py-4">No subject data available for this period</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* System Activity */}
+      <div className="bg-gray-800 p-6 rounded-lg shadow">
+        <h3 className="text-lg font-semibold mb-4 text-white">System Activity (Last 7 Days)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-gray-700 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-300">Present Marks</p>
+                <p className="text-2xl font-bold text-green-400">{logStats.mark_present || 0}</p>
+              </div>
+              <BookOpen className="w-8 h-8 text-green-400" />
+            </div>
+          </div>
+          <div className="bg-gray-700 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-300">Absent Marks</p>
+                <p className="text-2xl font-bold text-red-400">{logStats.mark_absent || 0}</p>
+              </div>
+              <AlertTriangle className="w-8 h-8 text-red-400" />
+            </div>
+          </div>
+          <div className="bg-gray-700 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-300">Late Marks</p>
+                <p className="text-2xl font-bold text-yellow-400">{logStats.mark_late || 0}</p>
+              </div>
+              <Clock className="w-8 h-8 text-yellow-400" />
+            </div>
+          </div>
+          <div className="bg-gray-700 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-300">Total Actions</p>
+                <p className="text-2xl font-bold text-blue-400">
+                  {(logStats.mark_present || 0) + (logStats.mark_absent || 0) + (logStats.mark_late || 0)}
+                </p>
+              </div>
+              <TrendingUp className="w-8 h-8 text-blue-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div>
+          <h4 className="text-md font-semibold mb-3 text-white">Recent Activity</h4>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {logStats.recentActivity?.length > 0 ? (
+              logStats.recentActivity.map((log, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${
+                      log.action === 'mark_present' ? 'bg-green-400' :
+                      log.action === 'mark_absent' ? 'bg-red-400' :
+                      'bg-yellow-400'
+                    }`}></div>
+                    <div>
+                      <p className="text-sm text-white">
+                        {log.admin?.full_name || log.admin?.username} marked{' '}
+                        <span className="font-medium">{log.student?.name}</span> as{' '}
+                        <span className={`font-medium ${
+                          log.action === 'mark_present' ? 'text-green-400' :
+                          log.action === 'mark_absent' ? 'text-red-400' :
+                          'text-yellow-400'
+                        }`}>
+                          {log.action.replace('mark_', '').toUpperCase()}
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {log.subject?.name} • {new Date(log.logged_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-400 text-center py-4">No recent activity</p>
+            )}
           </div>
         </div>
       </div>

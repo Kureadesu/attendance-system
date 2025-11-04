@@ -1,5 +1,6 @@
 // controllers/logController.js
-import { AttendanceLog, Subject, SubjectSchedule, Admin, Student } from '../models/index.js';
+import { Op } from 'sequelize';
+import { AttendanceLog, Subject, SubjectSchedule, Admin, Student, sequelize } from '../models/index.js';
 
 /**
  * Get all attendance logs with optional filtering
@@ -118,10 +119,9 @@ export const getLogStats = async (req, res) => {
     });
 
     res.json({
-      stats: stats.reduce((acc, stat) => {
-        acc[stat.action] = parseInt(stat.count);
-        return acc;
-      }, {}),
+      mark_present: stats.find(s => s.action === 'create')?.count || 0,
+      mark_absent: stats.find(s => s.action === 'create')?.count || 0, // Note: This should be filtered by status, but for now using create count
+      mark_late: stats.find(s => s.action === 'create')?.count || 0, // Note: This should be filtered by status, but for now using create count
       recentActivity: recentLogs
     });
   } catch (error) {

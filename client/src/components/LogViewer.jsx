@@ -1,7 +1,7 @@
 // client/src/components/LogViewer.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { logAPI } from '../api/clientAPI';
-import { FileText, Filter, Calendar, User, BookOpen, Clock, RefreshCw } from 'lucide-react';
+import { Filter, RefreshCw } from 'lucide-react';
 
 const LogViewer = () => {
   const [logs, setLogs] = useState([]);
@@ -15,32 +15,32 @@ const LogViewer = () => {
     limit: 50
   });
 
-  useEffect(() => {
-    fetchLogs();
-    fetchStats();
-  }, [filters]);
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
       const response = await logAPI.getLogs(filters);
-      setLogs(response.data.logs);
+      setLogs(response.data?.logs || []);
     } catch (error) {
       console.error('Error fetching logs:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await logAPI.getStats({ period: 7 });
-      setStats(response.data.stats);
-      setRecentActivity(response.data.recentActivity);
+      setStats(response.data?.stats || {});
+      setRecentActivity(response.data?.recentActivity || []);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchLogs();
+    fetchStats();
+  }, [filters, fetchLogs, fetchStats]);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
@@ -60,6 +60,7 @@ const LogViewer = () => {
   };
 
   const formatDateTime = (dateString) => {
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -94,57 +95,6 @@ const LogViewer = () => {
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </button>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <div className="flex items-center">
-            <div className="bg-green-900 p-2 rounded-lg">
-              <FileText className="w-5 h-5 text-green-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-300">Created</p>
-              <p className="text-xl font-bold text-white">{stats.create || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <div className="flex items-center">
-            <div className="bg-blue-900 p-2 rounded-lg">
-              <RefreshCw className="w-5 h-5 text-blue-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-300">Updated</p>
-              <p className="text-xl font-bold text-white">{stats.update || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <div className="flex items-center">
-            <div className="bg-red-900 p-2 rounded-lg">
-              <User className="w-5 h-5 text-red-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-300">Deleted</p>
-              <p className="text-xl font-bold text-white">{stats.delete || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <div className="flex items-center">
-            <div className="bg-yellow-900 p-2 rounded-lg">
-              <BookOpen className="w-5 h-5 text-yellow-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-300">Exempted</p>
-              <p className="text-xl font-bold text-white">{stats.exempt || 0}</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Filters */}

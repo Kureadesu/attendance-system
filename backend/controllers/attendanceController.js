@@ -328,9 +328,42 @@ export const getAttendanceSummary = async (req, res) => {
           attendance_rate: s.attendance_rate,
           absent_rate: s.absent_rate
         })),
-        highest_attendance: subjectStats.sort((a, b) => b.attendance_rate - a.attendance_rate).slice(0, 3),
-        highest_absent: subjectStats.sort((a, b) => b.absent_rate - a.absent_rate).slice(0, 3),
-        lowest_attendance: subjectStats.sort((a, b) => a.attendance_rate - b.attendance_rate).slice(0, 3)
+        highest_attendance: subjectStats.sort((a, b) => b.attendance_rate - a.attendance_rate).slice(0, 3).map(s => ({
+          subject_id: s.subject_id,
+          subject_name: s.subject?.name,
+          subject_code: s.subject?.code,
+          schedules: s.subject?.schedules,
+          total_records: s.total_records,
+          present: s.present,
+          absent: s.absent,
+          late: s.late,
+          attendance_rate: s.attendance_rate,
+          absent_rate: s.absent_rate
+        })),
+        highest_absent: subjectStats.sort((a, b) => b.absent_rate - a.absent_rate).slice(0, 3).map(s => ({
+          subject_id: s.subject_id,
+          subject_name: s.subject?.name,
+          subject_code: s.subject?.code,
+          schedules: s.subject?.schedules,
+          total_records: s.total_records,
+          present: s.present,
+          absent: s.absent,
+          late: s.late,
+          attendance_rate: s.attendance_rate,
+          absent_rate: s.absent_rate
+        })),
+        lowest_attendance: subjectStats.sort((a, b) => a.attendance_rate - b.attendance_rate).slice(0, 3).map(s => ({
+          subject_id: s.subject_id,
+          subject_name: s.subject?.name,
+          subject_code: s.subject?.code,
+          schedules: s.subject?.schedules,
+          total_records: s.total_records,
+          present: s.present,
+          absent: s.absent,
+          late: s.late,
+          attendance_rate: s.attendance_rate,
+          absent_rate: s.absent_rate
+        }))
       },
       dateRange: { startDate, endDate, range }
     });

@@ -7,6 +7,7 @@ import dashboardRoutes from './dashboard.js';
 import studentRoutes from './students.js';
 import subjectRoutes from './subjects.js';
 import scheduleRoutes from './schedule.js';
+import logRoutes from './logs.js';
 
 const router = express.Router();
 
@@ -23,5 +24,6 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/students', studentRoutes);
 router.use('/subjects', subjectRoutes);
 router.use('/schedules', scheduleRoutes);
+router.use('/logs', logRoutes);
 
 export default router;
