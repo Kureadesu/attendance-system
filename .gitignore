@@ -59,3 +59,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# amplify
+.amplify
+amplify_outputs*
+amplifyconfiguration*
